@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subir Imagen y Audio</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js"></script>
 </head>
 <body>
     <h2>Autenticación</h2>
@@ -29,10 +26,14 @@
     <div id="posts"></div>
 
     <script type="module">
-        // 🔹 Conectar con Firebase
+        // 🔹 Importar Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
+        
+        // 🔹 Importar Supabase
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+        // 🔹 Configurar Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
             authDomain: "mupho-ee0c0.firebaseapp.com",
@@ -42,11 +43,17 @@
             appId: "1:753205321017:web:d076264e8abdb7e5259ce8",
             measurementId: "G-CX2RXMBBQH"
         };
-
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
         const provider = new GoogleAuthProvider();
 
+        // 🔹 Configurar Supabase
+        const SUPABASE_URL = "https://htrtamxepujazvxngekg.supabase.co";
+        const SUPABASE_KEY = "TU-CLAVE-ANON";
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 🔹 Funciones de autenticación
         const loginBtn = document.getElementById("loginBtn");
         const logoutBtn = document.getElementById("logoutBtn");
         const userInfo = document.getElementById("userInfo");
@@ -73,11 +80,7 @@
             }
         });
 
-        // 🔹 Conectar con Supabase
-        const SUPABASE_URL = "https://htrtamxepujazvxngekg.supabase.co";
-        const SUPABASE_KEY = "TU-CLAVE-ANON";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+        // 🔹 Función para subir archivos a Supabase Storage
         async function uploadFile(file, bucket) {
             if (!file) {
                 alert("Selecciona un archivo.");
@@ -99,6 +102,7 @@
             return publicUrl;
         }
 
+        // 🔹 Función para subir post a Supabase
         async function uploadPost() {
             const user = auth.currentUser;
             if (!user) {
@@ -141,6 +145,7 @@
             fetchPosts();
         }
 
+        // 🔹 Función para cargar los posts
         async function fetchPosts() {
             const { data, error } = await supabase.from("posts").select("*").order("fecha", { ascending: false });
 
@@ -166,8 +171,11 @@
             });
         }
 
+        // 🔹 Eventos
         document.getElementById("uploadBtn").addEventListener("click", uploadPost);
         document.addEventListener("DOMContentLoaded", fetchPosts);
     </script>
 </body>
+</html>
+
 </html>
