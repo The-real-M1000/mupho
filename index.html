@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subir Imagen y Audio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
-    <!-- Actualización de las versiones de Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
 </head>
 <body>
     <h2>Autenticación</h2>
@@ -30,84 +27,50 @@
     <div id="posts"></div>
 
     <script>
-        // 🔹 Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
-            authDomain: "mupho-ee0c0.firebaseapp.com",
-            projectId: "mupho-ee0c0",
-            storageBucket: "mupho-ee0c0.firebasestorage.app",
-            messagingSenderId: "753205321017",
-            appId: "1:753205321017:web:d076264e8abdb7e5259ce8",
-            measurementId: "G-CX2RXMBBQH"
-        };
-
-        // Inicialización de Firebase con manejo de errores
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            console.log("Firebase inicializado correctamente");
-        } catch (error) {
-            console.error("Error al inicializar Firebase:", error);
-        }
-
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
-
         // 🔹 Configuración de Supabase
         const SUPABASE_URL = "https://htrtamxepujazvxngekg.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cnRhbXhlcHVqYXp2eG5nZWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg5OTI2NjgsImV4cCI6MjA1NDU2ODY2OH0.eUSM2NcjZ3389NCLpbfoeeHh4RJe7xG6SCZ33iyeLYU";
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 🔹 Autenticación con Firebase - Mejorada
+        // 🔹 Elementos del DOM
         const loginBtn = document.getElementById("loginBtn");
         const logoutBtn = document.getElementById("logoutBtn");
         const userInfo = document.getElementById("userInfo");
 
+        // 🔹 Autenticación con Supabase
         loginBtn.addEventListener("click", async () => {
             try {
-                console.log("Iniciando proceso de login...");
-                provider.setCustomParameters({
-                    prompt: 'select_account'
-                });
-                const result = await auth.signInWithPopup(provider);
-                console.log("Login exitoso:", result.user.displayName);
-            } catch (error) {
-                console.error("Error detallado en el login:", error);
-                let errorMessage = "Error al iniciar sesión";
-                if (error.code) {
-                    switch (error.code) {
-                        case 'auth/popup-blocked':
-                            errorMessage = "El popup fue bloqueado. Por favor, permite ventanas emergentes para este sitio.";
-                            break;
-                        case 'auth/popup-closed-by-user':
-                            errorMessage = "El proceso de login fue cancelado.";
-                            break;
-                        case 'auth/unauthorized-domain':
-                            errorMessage = "Este dominio no está autorizado para la autenticación.";
-                            break;
-                        default:
-                            errorMessage = `Error: ${error.message}`;
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin
                     }
-                }
-                alert(errorMessage);
+                });
+
+                if (error) throw error;
+                console.log("Login iniciado:", data);
+            } catch (error) {
+                console.error("Error en el login:", error);
+                alert("Error al iniciar sesión: " + error.message);
             }
         });
 
         logoutBtn.addEventListener("click", async () => {
             try {
-                await auth.signOut();
-                console.log("Cierre de sesión exitoso");
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                console.log("Sesión cerrada exitosamente");
             } catch (error) {
                 console.error("Error al cerrar sesión:", error);
                 alert("Error al cerrar sesión: " + error.message);
             }
         });
 
-        auth.onAuthStateChanged((user) => {
-            console.log("Estado de autenticación cambiado:", user ? "Usuario logueado" : "Usuario no logueado");
-            if (user) {
-                userInfo.textContent = `Bienvenido, ${user.displayName}`;
+        // 🔹 Observador del estado de autenticación
+        supabase.auth.onAuthStateChange((event, session) => {
+            console.log("Estado de auth cambiado:", event, session);
+            if (session) {
+                userInfo.textContent = `Bienvenido, ${session.user.email}`;
                 loginBtn.style.display = "none";
                 logoutBtn.style.display = "block";
             } else {
@@ -117,8 +80,6 @@
             }
         });
 
-        // [El resto del código permanece igual...]
-        
         // 🔹 Subir archivos a Supabase Storage
         async function uploadFile(file, bucket) {
             if (!file) return null;
@@ -145,8 +106,8 @@
 
         // 🔹 Subir un post (imagen + audio)
         async function uploadPost() {
-            const user = auth.currentUser;
-            if (!user) {
+            const session = await supabase.auth.getSession();
+            if (!session.data.session) {
                 alert("Debes iniciar sesión para subir un post.");
                 return;
             }
@@ -172,7 +133,7 @@
                     .insert([{
                         imagen: imageUrl,
                         audio: audioUrl,
-                        usuario: user.displayName,
+                        usuario: session.data.session.user.email,
                         fecha: new Date().toISOString()
                     }]);
 
@@ -222,6 +183,17 @@
         // 🔹 Event listeners
         document.getElementById("uploadBtn").addEventListener("click", uploadPost);
         document.addEventListener("DOMContentLoaded", fetchPosts);
+
+        // 🔹 Verificar sesión al cargar
+        async function checkSession() {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (session) {
+                userInfo.textContent = `Bienvenido, ${session.user.email}`;
+                loginBtn.style.display = "none";
+                logoutBtn.style.display = "block";
+            }
+        }
+        checkSession();
     </script>
 </body>
 </html>
