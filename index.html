@@ -3,329 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuPho - Música y Fotos</title>
-    <style>
-        .post {
-            max-width: 500px;
-            margin: 20px auto;
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-        .post img {
-            max-width: 100%;
-            cursor: pointer;
-        }
-        .likes, .comments {
-            margin: 10px 0;
-        }
-        .comment {
-            margin: 5px 0;
-            padding: 5px;
-            background: #f0f0f0;
-        }
-        #upload {
-            max-width: 500px;
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-        }
-        .preview {
-            max-width: 300px;
-            margin: 10px 0;
-        }
-        .loading {
-            display: none;
-            color: #666;
-        }
-    </style>
+    <title>Subir Imagen y Audio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js"></script>
 </head>
 <body>
-    <div id="auth">
-        <button id="loginBtn">Iniciar Sesión con Google</button>
-        <button id="logoutBtn" style="display: none;">Cerrar Sesión</button>
-    </div>
+    <h2>Autenticación</h2>
+    <button id="loginBtn">Iniciar Sesión con Google</button>
+    <button id="logoutBtn" style="display: none;">Cerrar Sesión</button>
+    <p id="userInfo"></p>
 
-    <div id="upload" style="display: none;">
-        <h2>Subir Nuevo Post</h2>
-        <div>
-            <label>Imagen (max 1MB):</label>
-            <input type="file" id="imageInput" accept="image/*">
-            <img id="imagePreview" class="preview" style="display: none;">
-        </div>
-        <div>
-            <label>Audio (max 1MB):</label>
-            <input type="file" id="audioInput" accept="audio/*">
-            <audio id="audioPreview" controls style="display: none;"></audio>
-        </div>
-        <div class="loading" id="loadingMsg">Procesando archivos...</div>
-        <button id="uploadBtn">Publicar</button>
-    </div>
+    <h2>Subir Imagen y Audio</h2>
+    <label>Selecciona una imagen:</label>
+    <input type="file" id="imageInput" accept="image/*">
+    <br><br>
 
+    <label>Selecciona un audio:</label>
+    <input type="file" id="audioInput" accept="audio/*">
+    <br><br>
+
+    <button id="uploadBtn">Subir Post</button>
+
+    <h2>Posts Subidos</h2>
     <div id="posts"></div>
 
     <script type="module">
+        // 🔹 Conectar con Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
             authDomain: "mupho-ee0c0.firebaseapp.com",
             projectId: "mupho-ee0c0",
+            storageBucket: "mupho-ee0c0.firebasestorage.app",
             messagingSenderId: "753205321017",
-            appId: "1:753205321017:web:d076264e8abdb7e5259ce8"
+            appId: "1:753205321017:web:d076264e8abdb7e5259ce8",
+            measurementId: "G-CX2RXMBBQH"
         };
 
-        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
-        const db = getFirestore();
-        let currentUser = null;
+        const provider = new GoogleAuthProvider();
 
-        // Funciones de utilidad para procesar archivos
-        function compressImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800;
-                        const MAX_HEIGHT = 600;
-                        let width = img.width;
-                        let height = img.height;
+        const loginBtn = document.getElementById("loginBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const userInfo = document.getElementById("userInfo");
 
-                        if (width > height) {
-                            if (width > MAX_WIDTH) {
-                                height *= MAX_WIDTH / width;
-                                width = MAX_WIDTH;
-                            }
-                        } else {
-                            if (height > MAX_HEIGHT) {
-                                width *= MAX_HEIGHT / height;
-                                height = MAX_HEIGHT;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                };
-            });
-        }
-
-        function audioToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        // Autenticación
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const uploadDiv = document.getElementById('upload');
-
-        loginBtn.addEventListener('click', async () => {
-            const provider = new GoogleAuthProvider();
+        loginBtn.addEventListener("click", async () => {
             try {
                 await signInWithPopup(auth, provider);
             } catch (error) {
-                console.error('Error de login:', error);
+                console.error("Error en el login:", error);
             }
         });
 
-        logoutBtn.addEventListener('click', () => signOut(auth));
+        logoutBtn.addEventListener("click", () => signOut(auth));
 
         onAuthStateChanged(auth, (user) => {
-            currentUser = user;
             if (user) {
-                loginBtn.style.display = 'none';
-                logoutBtn.style.display = 'block';
-                uploadDiv.style.display = 'block';
+                userInfo.textContent = `Bienvenido, ${user.displayName}`;
+                loginBtn.style.display = "none";
+                logoutBtn.style.display = "block";
             } else {
-                loginBtn.style.display = 'block';
-                logoutBtn.style.display = 'none';
-                uploadDiv.style.display = 'none';
+                userInfo.textContent = "";
+                loginBtn.style.display = "block";
+                logoutBtn.style.display = "none";
             }
         });
 
-        // Preview de archivos
-        const imageInput = document.getElementById('imageInput');
-        const audioInput = document.getElementById('audioInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const audioPreview = document.getElementById('audioPreview');
-        const loadingMsg = document.getElementById('loadingMsg');
+        // 🔹 Conectar con Supabase
+        const SUPABASE_URL = "https://htrtamxepujazvxngekg.supabase.co";
+        const SUPABASE_KEY = "TU-CLAVE-ANON";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        imageInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.size > 1024 * 1024) {
-                    alert('La imagen no debe superar 1MB');
-                    imageInput.value = '';
-                    return;
-                }
-                const compressed = await compressImage(file);
-                imagePreview.src = compressed;
-                imagePreview.style.display = 'block';
+        async function uploadFile(file, bucket) {
+            if (!file) {
+                alert("Selecciona un archivo.");
+                return null;
             }
-        });
 
-        audioInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.size > 1024 * 1024) {
-                    alert('El audio no debe superar 1MB');
-                    audioInput.value = '';
-                    return;
-                }
-                const audioBase64 = await audioToBase64(file);
-                audioPreview.src = audioBase64;
-                audioPreview.style.display = 'block';
+            const fileName = `${bucket}/${Date.now()}-${file.name}`;
+            const { data, error } = await supabase.storage
+                .from(bucket)
+                .upload(fileName, file);
+
+            if (error) {
+                console.error(`Error al subir ${bucket}:`, error);
+                alert(`Error al subir el archivo de ${bucket}.`);
+                return null;
             }
-        });
 
-        // Subir contenido
-        const uploadBtn = document.getElementById('uploadBtn');
+            const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(fileName);
+            return publicUrl;
+        }
 
-        uploadBtn.addEventListener('click', async () => {
-            if (!imageInput.files[0] || !audioInput.files[0]) {
-                alert('Por favor selecciona una imagen y un archivo de audio');
+        async function uploadPost() {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Debes iniciar sesión para subir un post.");
                 return;
             }
 
-            loadingMsg.style.display = 'block';
-            uploadBtn.disabled = true;
+            const audioFile = document.getElementById("audioInput").files[0];
+            const imageFile = document.getElementById("imageInput").files[0];
 
-            try {
-                const imageBase64 = await compressImage(imageInput.files[0]);
-                const audioBase64 = await audioToBase64(audioInput.files[0]);
-
-                await addDoc(collection(db, 'posts'), {
-                    imageData: imageBase64,
-                    audioData: audioBase64,
-                    userId: currentUser.uid,
-                    userName: currentUser.displayName,
-                    timestamp: new Date(),
-                    likes: [],
-                    comments: []
-                });
-
-                imageInput.value = '';
-                audioInput.value = '';
-                imagePreview.style.display = 'none';
-                audioPreview.style.display = 'none';
-                loadingMsg.style.display = 'none';
-                uploadBtn.disabled = false;
-            } catch (error) {
-                console.error('Error al publicar:', error);
-                alert('Error al publicar el contenido');
-                loadingMsg.style.display = 'none';
-                uploadBtn.disabled = false;
+            if (!audioFile || !imageFile) {
+                alert("Selecciona una imagen y un audio.");
+                return;
             }
-        });
 
-        // Mostrar posts
-        const postsDiv = document.getElementById('posts');
-        let currentAudio = null;
+            const audioUrl = await uploadFile(audioFile, "audio");
+            const imageUrl = await uploadFile(imageFile, "imagen");
 
-        const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
-        onSnapshot(q, (snapshot) => {
-            postsDiv.innerHTML = '';
-            snapshot.forEach((doc) => {
-                const post = doc.data();
-                const postElement = document.createElement('div');
-                postElement.className = 'post';
-                
-                // Imagen y audio
-                const img = document.createElement('img');
-                img.src = post.imageData;
-                const audio = new Audio(post.audioData);
-                
-                // Control de reproducción
-                img.addEventListener('click', () => {
-                    if (currentAudio && currentAudio !== audio) {
-                        currentAudio.pause();
-                    }
-                    if (audio.paused) {
-                        audio.play();
-                        currentAudio = audio;
-                    } else {
-                        audio.pause();
-                    }
-                });
+            if (!audioUrl || !imageUrl) {
+                alert("Error al subir los archivos.");
+                return;
+            }
 
-                // Likes
-                const likesDiv = document.createElement('div');
-                likesDiv.className = 'likes';
-                const likeBtn = document.createElement('button');
-                likeBtn.textContent = `${post.likes.length} Me gusta`;
-                likeBtn.disabled = !currentUser;
-                
-                if (currentUser) {
-                    likeBtn.addEventListener('click', async () => {
-                        const postRef = doc(db, 'posts', doc.id);
-                        if (post.likes.includes(currentUser.uid)) {
-                            await updateDoc(postRef, {
-                                likes: arrayRemove(currentUser.uid)
-                            });
-                        } else {
-                            await updateDoc(postRef, {
-                                likes: arrayUnion(currentUser.uid)
-                            });
-                        }
-                    });
-                }
+            const { data, error } = await supabase
+                .from("posts")
+                .insert([{ 
+                    imagen: imageUrl, 
+                    audio: audioUrl, 
+                    usuario: user.displayName,
+                    fecha: new Date() 
+                }]);
 
-                // Comentarios
-                const commentsDiv = document.createElement('div');
-                commentsDiv.className = 'comments';
-                post.comments.forEach(comment => {
-                    const commentElement = document.createElement('div');
-                    commentElement.className = 'comment';
-                    commentElement.textContent = `${comment.userName}: ${comment.text}`;
-                    commentsDiv.appendChild(commentElement);
-                });
+            if (error) {
+                console.error("Error al guardar en la base de datos:", error);
+                alert("Error al guardar en la base de datos.");
+                return;
+            }
 
-                if (currentUser) {
-                    const commentInput = document.createElement('input');
-                    commentInput.placeholder = 'Escribe un comentario...';
-                    const commentBtn = document.createElement('button');
-                    commentBtn.textContent = 'Comentar';
-                    
-                    commentBtn.addEventListener('click', async () => {
-                        if (commentInput.value.trim()) {
-                            const postRef = doc(db, 'posts', doc.id);
-                            await updateDoc(postRef, {
-                                comments: arrayUnion({
-                                    userId: currentUser.uid,
-                                    userName: currentUser.displayName,
-                                    text: commentInput.value.trim(),
-                                    timestamp: new Date()
-                                })
-                            });
-                            commentInput.value = '';
-                        }
-                    });
+            alert("Post subido correctamente.");
+            fetchPosts();
+        }
 
-                    commentsDiv.appendChild(commentInput);
-                    commentsDiv.appendChild(commentBtn);
-                }
+        async function fetchPosts() {
+            const { data, error } = await supabase.from("posts").select("*").order("fecha", { ascending: false });
 
-                postElement.appendChild(img);
-                postElement.appendChild(likesDiv);
-                likesDiv.appendChild(likeBtn);
-                postElement.appendChild(commentsDiv);
+            if (error) {
+                console.error("Error al obtener posts:", error);
+                return;
+            }
+
+            const postsDiv = document.getElementById("posts");
+            postsDiv.innerHTML = "";
+
+            data.forEach(post => {
+                const postElement = document.createElement("div");
+                postElement.innerHTML = `
+                    <h3>${post.usuario}</h3>
+                    <img src="${post.imagen}" style="max-width: 200px;">
+                    <br>
+                    <audio controls src="${post.audio}"></audio>
+                    <p>${new Date(post.fecha).toLocaleString()}</p>
+                    <hr>
+                `;
                 postsDiv.appendChild(postElement);
             });
-        });
+        }
+
+        document.getElementById("uploadBtn").addEventListener("click", uploadPost);
+        document.addEventListener("DOMContentLoaded", fetchPosts);
     </script>
 </body>
 </html>
