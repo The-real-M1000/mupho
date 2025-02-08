@@ -3,197 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Imagen y Audio</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <title>MuPho - Música y Fotos</title>
+    <style>
+        .post {
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .post img {
+            max-width: 100%;
+            cursor: pointer;
+        }
+        .likes, .comments {
+            margin: 10px 0;
+        }
+        .comment {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
-    <h2>Autenticación</h2>
-    <button id="loginBtn">Iniciar Sesión con Google</button>
-    <button id="logoutBtn" style="display: none;">Cerrar Sesión</button>
-    <p id="userInfo"></p>
+    <div id="auth">
+        <button id="loginBtn">Iniciar Sesión con Google</button>
+        <button id="logoutBtn" style="display: none;">Cerrar Sesión</button>
+    </div>
 
-    <h2>Subir Imagen y Audio</h2>
-    <label>Selecciona una imagen:</label>
-    <input type="file" id="imageInput" accept="image/*">
-    <br><br>
+    <div id="upload" style="display: none;">
+        <h2>Subir Nuevo Post</h2>
+        <input type="file" id="imageInput" accept="image/*">
+        <input type="file" id="audioInput" accept="audio/*">
+        <button id="uploadBtn">Subir</button>
+    </div>
 
-    <label>Selecciona un audio:</label>
-    <input type="file" id="audioInput" accept="audio/*">
-    <br><br>
-
-    <button id="uploadBtn">Subir Post</button>
-
-    <h2>Posts Subidos</h2>
     <div id="posts"></div>
 
-    <script>
-        // 🔹 Configuración de Supabase
-        const SUPABASE_URL = "https://htrtamxepujazvxngekg.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cnRhbXhlcHVqYXp2eG5nZWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg5OTI2NjgsImV4cCI6MjA1NDU2ODY2OH0.eUSM2NcjZ3389NCLpbfoeeHh4RJe7xG6SCZ33iyeLYU";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-storage.js";
 
-        // 🔹 Elementos del DOM
-        const loginBtn = document.getElementById("loginBtn");
-        const logoutBtn = document.getElementById("logoutBtn");
-        const userInfo = document.getElementById("userInfo");
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
+            authDomain: "mupho-ee0c0.firebaseapp.com",
+            projectId: "mupho-ee0c0",
+            storageBucket: "mupho-ee0c0.appspot.com",
+            messagingSenderId: "753205321017",
+            appId: "1:753205321017:web:d076264e8abdb7e5259ce8"
+        };
 
-        // 🔹 Autenticación con Supabase
-        loginBtn.addEventListener("click", async () => {
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore();
+        const storage = getStorage();
+        let currentUser = null;
+
+        // Autenticación
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const uploadDiv = document.getElementById('upload');
+
+        loginBtn.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
             try {
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: window.location.origin
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error('Error de login:', error);
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => signOut(auth));
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+                uploadDiv.style.display = 'block';
+            } else {
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+                uploadDiv.style.display = 'none';
+            }
+        });
+
+        // Subida de archivos
+        const uploadBtn = document.getElementById('uploadBtn');
+        const imageInput = document.getElementById('imageInput');
+        const audioInput = document.getElementById('audioInput');
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!imageInput.files[0] || !audioInput.files[0]) {
+                alert('Por favor selecciona una imagen y un archivo de audio');
+                return;
+            }
+
+            const imageFile = imageInput.files[0];
+            const audioFile = audioInput.files[0];
+
+            try {
+                // Subir imagen
+                const imageRef = ref(storage, `images/${Date.now()}_${imageFile.name}`);
+                await uploadBytes(imageRef, imageFile);
+                const imageUrl = await getDownloadURL(imageRef);
+
+                // Subir audio
+                const audioRef = ref(storage, `audio/${Date.now()}_${audioFile.name}`);
+                await uploadBytes(audioRef, audioFile);
+                const audioUrl = await getDownloadURL(audioRef);
+
+                // Guardar post en Firestore
+                await addDoc(collection(db, 'posts'), {
+                    imageUrl,
+                    audioUrl,
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName,
+                    timestamp: new Date(),
+                    likes: [],
+                    comments: []
+                });
+
+                imageInput.value = '';
+                audioInput.value = '';
+            } catch (error) {
+                console.error('Error al subir:', error);
+                alert('Error al subir los archivos');
+            }
+        });
+
+        // Mostrar posts
+        const postsDiv = document.getElementById('posts');
+        let currentAudio = null;
+
+        const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
+        onSnapshot(q, (snapshot) => {
+            postsDiv.innerHTML = '';
+            snapshot.forEach((doc) => {
+                const post = doc.data();
+                const postElement = document.createElement('div');
+                postElement.className = 'post';
+                
+                // Imagen y audio
+                const img = document.createElement('img');
+                img.src = post.imageUrl;
+                const audio = new Audio(post.audioUrl);
+                
+                // Control de reproducción
+                img.addEventListener('click', () => {
+                    if (currentAudio && currentAudio !== audio) {
+                        currentAudio.pause();
+                    }
+                    if (audio.paused) {
+                        audio.play();
+                        currentAudio = audio;
+                    } else {
+                        audio.pause();
                     }
                 });
 
-                if (error) throw error;
-                console.log("Login iniciado:", data);
-            } catch (error) {
-                console.error("Error en el login:", error);
-                alert("Error al iniciar sesión: " + error.message);
-            }
-        });
-
-        logoutBtn.addEventListener("click", async () => {
-            try {
-                const { error } = await supabase.auth.signOut();
-                if (error) throw error;
-                console.log("Sesión cerrada exitosamente");
-            } catch (error) {
-                console.error("Error al cerrar sesión:", error);
-                alert("Error al cerrar sesión: " + error.message);
-            }
-        });
-
-        // 🔹 Observador del estado de autenticación
-        supabase.auth.onAuthStateChange((event, session) => {
-            console.log("Estado de auth cambiado:", event, session);
-            if (session) {
-                userInfo.textContent = `Bienvenido, ${session.user.email}`;
-                loginBtn.style.display = "none";
-                logoutBtn.style.display = "block";
-            } else {
-                userInfo.textContent = "";
-                loginBtn.style.display = "block";
-                logoutBtn.style.display = "none";
-            }
-        });
-
-        // 🔹 Subir archivos a Supabase Storage
-        async function uploadFile(file, bucket) {
-            if (!file) return null;
-
-            try {
-                const fileName = `${Date.now()}-${file.name}`;
-                const { data, error } = await supabase.storage
-                    .from(bucket)
-                    .upload(fileName, file);
-
-                if (error) throw error;
-
-                const { data: urlData } = supabase.storage
-                    .from(bucket)
-                    .getPublicUrl(fileName);
-
-                return urlData.publicUrl;
-            } catch (error) {
-                console.error(`Error al subir ${bucket}:`, error);
-                alert(`Error al subir el archivo de ${bucket}: ${error.message}`);
-                return null;
-            }
-        }
-
-        // 🔹 Subir un post (imagen + audio)
-        async function uploadPost() {
-            const session = await supabase.auth.getSession();
-            if (!session.data.session) {
-                alert("Debes iniciar sesión para subir un post.");
-                return;
-            }
-
-            const audioFile = document.getElementById("audioInput").files[0];
-            const imageFile = document.getElementById("imageInput").files[0];
-
-            if (!audioFile || !imageFile) {
-                alert("Selecciona una imagen y un audio.");
-                return;
-            }
-
-            try {
-                const audioUrl = await uploadFile(audioFile, "audio");
-                const imageUrl = await uploadFile(imageFile, "imagen");
-
-                if (!audioUrl || !imageUrl) {
-                    throw new Error("Error al subir los archivos");
+                // Likes
+                const likesDiv = document.createElement('div');
+                likesDiv.className = 'likes';
+                const likeBtn = document.createElement('button');
+                likeBtn.textContent = `${post.likes.length} Me gusta`;
+                likeBtn.disabled = !currentUser;
+                
+                if (currentUser) {
+                    likeBtn.addEventListener('click', async () => {
+                        const postRef = doc(db, 'posts', doc.id);
+                        if (post.likes.includes(currentUser.uid)) {
+                            await updateDoc(postRef, {
+                                likes: arrayRemove(currentUser.uid)
+                            });
+                        } else {
+                            await updateDoc(postRef, {
+                                likes: arrayUnion(currentUser.uid)
+                            });
+                        }
+                    });
                 }
 
-                const { error } = await supabase
-                    .from("posts")
-                    .insert([{
-                        imagen: imageUrl,
-                        audio: audioUrl,
-                        usuario: session.data.session.user.email,
-                        fecha: new Date().toISOString()
-                    }]);
-
-                if (error) throw error;
-
-                alert("Post subido correctamente.");
-                document.getElementById("imageInput").value = "";
-                document.getElementById("audioInput").value = "";
-                await fetchPosts();
-            } catch (error) {
-                console.error("Error al subir post:", error);
-                alert("Error al subir el post: " + error.message);
-            }
-        }
-
-        // 🔹 Obtener y mostrar posts
-        async function fetchPosts() {
-            try {
-                const { data, error } = await supabase
-                    .from("posts")
-                    .select("*")
-                    .order("fecha", { ascending: false });
-
-                if (error) throw error;
-
-                const postsDiv = document.getElementById("posts");
-                postsDiv.innerHTML = "";
-
-                data.forEach(post => {
-                    const postElement = document.createElement("div");
-                    postElement.innerHTML = `
-                        <h3>${post.usuario}</h3>
-                        <img src="${post.imagen}" style="max-width: 200px;">
-                        <br>
-                        <audio controls src="${post.audio}"></audio>
-                        <p>${new Date(post.fecha).toLocaleString()}</p>
-                        <hr>
-                    `;
-                    postsDiv.appendChild(postElement);
+                // Comentarios
+                const commentsDiv = document.createElement('div');
+                commentsDiv.className = 'comments';
+                post.comments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'comment';
+                    commentElement.textContent = `${comment.userName}: ${comment.text}`;
+                    commentsDiv.appendChild(commentElement);
                 });
-            } catch (error) {
-                console.error("Error al obtener posts:", error);
-                alert("Error al cargar los posts: " + error.message);
-            }
-        }
 
-        // 🔹 Event listeners
-        document.getElementById("uploadBtn").addEventListener("click", uploadPost);
-        document.addEventListener("DOMContentLoaded", fetchPosts);
+                if (currentUser) {
+                    const commentInput = document.createElement('input');
+                    commentInput.placeholder = 'Escribe un comentario...';
+                    const commentBtn = document.createElement('button');
+                    commentBtn.textContent = 'Comentar';
+                    
+                    commentBtn.addEventListener('click', async () => {
+                        if (commentInput.value.trim()) {
+                            const postRef = doc(db, 'posts', doc.id);
+                            await updateDoc(postRef, {
+                                comments: arrayUnion({
+                                    userId: currentUser.uid,
+                                    userName: currentUser.displayName,
+                                    text: commentInput.value.trim(),
+                                    timestamp: new Date()
+                                })
+                            });
+                            commentInput.value = '';
+                        }
+                    });
 
-        // 🔹 Verificar sesión al cargar
-        async function checkSession() {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (session) {
-                userInfo.textContent = `Bienvenido, ${session.user.email}`;
-                loginBtn.style.display = "none";
-                logoutBtn.style.display = "block";
-            }
-        }
-        checkSession();
+                    commentsDiv.appendChild(commentInput);
+                    commentsDiv.appendChild(commentBtn);
+                }
+
+                postElement.appendChild(img);
+                postElement.appendChild(likesDiv);
+                likesDiv.appendChild(likeBtn);
+                postElement.appendChild(commentsDiv);
+                postsDiv.appendChild(postElement);
+            });
+        });
     </script>
 </body>
 </html>
