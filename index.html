@@ -1,235 +1,116 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MuPho - Música y Fotos</title>
-    <style>
-        .post {
-            max-width: 500px;
-            margin: 20px auto;
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-        .post img {
-            max-width: 100%;
-            cursor: pointer;
-        }
-        .likes, .comments {
-            margin: 10px 0;
-        }
-        .comment {
-            margin: 5px 0;
-            padding: 5px;
-            background: #f0f0f0;
-        }
-    </style>
+    <title>Subir a Google Drive</title>
 </head>
 <body>
-    <div id="auth">
-        <button id="loginBtn">Iniciar Sesión con Google</button>
-        <button id="logoutBtn" style="display: none;">Cerrar Sesión</button>
-    </div>
+    <h2>Autenticación</h2>
+    <button id="loginBtn">Iniciar Sesión con Google</button>
+    <button id="logoutBtn" style="display: none;">Cerrar Sesión</button>
+    <p id="userInfo"></p>
 
-    <div id="upload" style="display: none;">
-        <h2>Subir Nuevo Post</h2>
-        <input type="file" id="imageInput" accept="image/*">
-        <input type="file" id="audioInput" accept="audio/*">
-        <button id="uploadBtn">Subir</button>
-    </div>
+    <h2>Subir Archivo</h2>
+    <input type="file" id="fileInput">
+    <button id="uploadBtn">Subir a Google Drive</button>
 
-    <div id="posts"></div>
+    <h2>Archivos Subidos</h2>
+    <div id="files"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-storage.js";
+    <script>
+        // 🔹 Credenciales de Google Drive
+        const CLIENT_ID = "267067796738-dckkbrvsfn5mhn0p5i7du7g0fn567gtb.apps.googleusercontent.com";
+        const API_KEY = "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";
+        const FOLDER_ID = "12fU6kj1wdDBHCGY5vzX7E8qV-t3QjP4m";
+        const SCOPES = "https://www.googleapis.com/auth/drive.file";
 
-        // Tu configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
-            authDomain: "mupho-ee0c0.firebaseapp.com",
-            projectId: "mupho-ee0c0",
-            storageBucket: "mupho-ee0c0.appspot.com",
-            messagingSenderId: "753205321017",
-            appId: "1:753205321017:web:d076264e8abdb7e5259ce8"
-        };
+        let authInstance;
 
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
-        const db = getFirestore();
-        const storage = getStorage();
-        let currentUser = null;
+        function handleAuthClick() {
+            authInstance.signIn();
+        }
 
-        // Autenticación
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const uploadDiv = document.getElementById('upload');
+        function handleSignOutClick() {
+            authInstance.signOut();
+            document.getElementById("userInfo").textContent = "";
+            document.getElementById("logoutBtn").style.display = "none";
+            document.getElementById("loginBtn").style.display = "block";
+        }
 
-        loginBtn.addEventListener('click', async () => {
-            const provider = new GoogleAuthProvider();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error('Error de login:', error);
-            }
-        });
+        function initAuth() {
+            gapi.load("client:auth2", () => {
+                gapi.client.init({
+                    apiKey: API_KEY,
+                    clientId: CLIENT_ID,
+                    scope: SCOPES
+                }).then(() => {
+                    authInstance = gapi.auth2.getAuthInstance();
+                    authInstance.isSignedIn.listen(updateSigninStatus);
+                    updateSigninStatus(authInstance.isSignedIn.get());
+                });
+            });
+        }
 
-        logoutBtn.addEventListener('click', () => signOut(auth));
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                loginBtn.style.display = 'none';
-                logoutBtn.style.display = 'block';
-                uploadDiv.style.display = 'block';
+        function updateSigninStatus(isSignedIn) {
+            if (isSignedIn) {
+                let user = authInstance.currentUser.get().getBasicProfile();
+                document.getElementById("userInfo").textContent = `Bienvenido, ${user.getName()}`;
+                document.getElementById("logoutBtn").style.display = "block";
+                document.getElementById("loginBtn").style.display = "none";
             } else {
-                loginBtn.style.display = 'block';
-                logoutBtn.style.display = 'none';
-                uploadDiv.style.display = 'none';
+                document.getElementById("userInfo").textContent = "";
+                document.getElementById("logoutBtn").style.display = "none";
+                document.getElementById("loginBtn").style.display = "block";
             }
-        });
+        }
 
-        // Subida de archivos
-        const uploadBtn = document.getElementById('uploadBtn');
-        const imageInput = document.getElementById('imageInput');
-        const audioInput = document.getElementById('audioInput');
-
-        uploadBtn.addEventListener('click', async () => {
-            if (!imageInput.files[0] || !audioInput.files[0]) {
-                alert('Por favor selecciona una imagen y un archivo de audio');
+        async function uploadFile() {
+            const file = document.getElementById("fileInput").files[0];
+            if (!file) {
+                alert("Selecciona un archivo.");
                 return;
             }
 
-            const imageFile = imageInput.files[0];
-            const audioFile = audioInput.files[0];
+            const metadata = {
+                name: file.name,
+                parents: [FOLDER_ID]
+            };
 
-            try {
-                // Subir imagen
-                const imageRef = ref(storage, `images/${Date.now()}_${imageFile.name}`);
-                await uploadBytes(imageRef, imageFile);
-                const imageUrl = await getDownloadURL(imageRef);
+            const form = new FormData();
+            form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+            form.append("file", file);
 
-                // Subir audio
-                const audioRef = ref(storage, `audio/${Date.now()}_${audioFile.name}`);
-                await uploadBytes(audioRef, audioFile);
-                const audioUrl = await getDownloadURL(audioRef);
+            const accessToken = gapi.auth.getToken().access_token;
 
-                // Guardar post en Firestore
-                await addDoc(collection(db, 'posts'), {
-                    imageUrl,
-                    audioUrl,
-                    userId: currentUser.uid,
-                    userName: currentUser.displayName,
-                    timestamp: new Date(),
-                    likes: [],
-                    comments: []
-                });
-
-                imageInput.value = '';
-                audioInput.value = '';
-            } catch (error) {
-                console.error('Error al subir:', error);
-                alert('Error al subir los archivos');
-            }
-        });
-
-        // Mostrar posts
-        const postsDiv = document.getElementById('posts');
-        let currentAudio = null;
-
-        const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
-        onSnapshot(q, (snapshot) => {
-            postsDiv.innerHTML = '';
-            snapshot.forEach((doc) => {
-                const post = doc.data();
-                const postElement = document.createElement('div');
-                postElement.className = 'post';
-                
-                // Imagen y audio
-                const img = document.createElement('img');
-                img.src = post.imageUrl;
-                const audio = new Audio(post.audioUrl);
-                
-                // Control de reproducción
-                img.addEventListener('click', () => {
-                    if (currentAudio && currentAudio !== audio) {
-                        currentAudio.pause();
-                    }
-                    if (audio.paused) {
-                        audio.play();
-                        currentAudio = audio;
-                    } else {
-                        audio.pause();
-                    }
-                });
-
-                // Likes
-                const likesDiv = document.createElement('div');
-                likesDiv.className = 'likes';
-                const likeBtn = document.createElement('button');
-                likeBtn.textContent = `${post.likes.length} Me gusta`;
-                likeBtn.disabled = !currentUser;
-                
-                if (currentUser) {
-                    likeBtn.addEventListener('click', async () => {
-                        const postRef = doc(db, 'posts', doc.id);
-                        if (post.likes.includes(currentUser.uid)) {
-                            await updateDoc(postRef, {
-                                likes: arrayRemove(currentUser.uid)
-                            });
-                        } else {
-                            await updateDoc(postRef, {
-                                likes: arrayUnion(currentUser.uid)
-                            });
-                        }
-                    });
-                }
-
-                // Comentarios
-                const commentsDiv = document.createElement('div');
-                commentsDiv.className = 'comments';
-                post.comments.forEach(comment => {
-                    const commentElement = document.createElement('div');
-                    commentElement.className = 'comment';
-                    commentElement.textContent = `${comment.userName}: ${comment.text}`;
-                    commentsDiv.appendChild(commentElement);
-                });
-
-                if (currentUser) {
-                    const commentInput = document.createElement('input');
-                    commentInput.placeholder = 'Escribe un comentario...';
-                    const commentBtn = document.createElement('button');
-                    commentBtn.textContent = 'Comentar';
-                    
-                    commentBtn.addEventListener('click', async () => {
-                        if (commentInput.value.trim()) {
-                            const postRef = doc(db, 'posts', doc.id);
-                            await updateDoc(postRef, {
-                                comments: arrayUnion({
-                                    userId: currentUser.uid,
-                                    userName: currentUser.displayName,
-                                    text: commentInput.value.trim(),
-                                    timestamp: new Date()
-                                })
-                            });
-                            commentInput.value = '';
-                        }
-                    });
-
-                    commentsDiv.appendChild(commentInput);
-                    commentsDiv.appendChild(commentBtn);
-                }
-
-                postElement.appendChild(img);
-                postElement.appendChild(likesDiv);
-                likesDiv.appendChild(likeBtn);
-                postElement.appendChild(commentsDiv);
-                postsDiv.appendChild(postElement);
+            const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${accessToken}` },
+                body: form
             });
-        });
+
+            const data = await response.json();
+            const fileId = data.id;
+
+            await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ role: "reader", type: "anyone" })
+            });
+
+            const fileUrl = `https://drive.google.com/uc?id=${fileId}`;
+            document.getElementById("files").innerHTML += `<p><a href="${fileUrl}" target="_blank">${file.name}</a></p>`;
+        }
+
+        document.getElementById("loginBtn").addEventListener("click", handleAuthClick);
+        document.getElementById("logoutBtn").addEventListener("click", handleSignOutClick);
+        document.getElementById("uploadBtn").addEventListener("click", uploadFile);
     </script>
+
+    <script async defer src="https://apis.google.com/js/api.js" onload="initAuth()"></script>
 </body>
 </html>
