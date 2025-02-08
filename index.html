@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subir Imagen y Audio</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
 </head>
 <body>
     <h2>Autenticación</h2>
@@ -28,11 +28,8 @@
     <h2>Posts Subidos</h2>
     <div id="posts"></div>
 
-    <script type="module">
+    <script>
         // 🔹 Configuración de Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.3.0/firebase-auth.js";
-
         const firebaseConfig = {
             apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
             authDomain: "mupho-ee0c0.firebaseapp.com",
@@ -43,9 +40,9 @@
             measurementId: "G-CX2RXMBBQH"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
-        const provider = new GoogleAuthProvider();
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
 
         // 🔹 Configuración de Supabase
         const SUPABASE_URL = "https://htrtamxepujazvxngekg.supabase.co";
@@ -59,15 +56,16 @@
 
         loginBtn.addEventListener("click", async () => {
             try {
-                await signInWithPopup(auth, provider);
+                await auth.signInWithPopup(provider);
             } catch (error) {
                 console.error("Error en el login:", error);
+                alert("Error al iniciar sesión: " + error.message);
             }
         });
 
-        logoutBtn.addEventListener("click", () => signOut(auth));
+        logoutBtn.addEventListener("click", () => auth.signOut());
 
-        onAuthStateChanged(auth, (user) => {
+        auth.onAuthStateChanged((user) => {
             if (user) {
                 userInfo.textContent = `Bienvenido, ${user.displayName}`;
                 loginBtn.style.display = "none";
@@ -81,24 +79,26 @@
 
         // 🔹 Subir archivos a Supabase Storage
         async function uploadFile(file, bucket) {
-            if (!file) {
-                alert("Selecciona un archivo.");
-                return null;
-            }
+            if (!file) return null;
 
-            const fileName = `${bucket}/${Date.now()}-${file.name}`;
-            const { data, error } = await supabase.storage
-                .from(bucket)
-                .upload(fileName, file);
+            try {
+                const fileName = `${Date.now()}-${file.name}`;
+                const { data, error } = await supabase.storage
+                    .from(bucket)
+                    .upload(fileName, file);
 
-            if (error) {
+                if (error) throw error;
+
+                const { data: urlData } = supabase.storage
+                    .from(bucket)
+                    .getPublicUrl(fileName);
+
+                return urlData.publicUrl;
+            } catch (error) {
                 console.error(`Error al subir ${bucket}:`, error);
-                alert(`Error al subir el archivo de ${bucket}.`);
+                alert(`Error al subir el archivo de ${bucket}: ${error.message}`);
                 return null;
             }
-
-            const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(fileName);
-            return publicUrl;
         }
 
         // 🔹 Subir un post (imagen + audio)
@@ -117,57 +117,64 @@
                 return;
             }
 
-            const audioUrl = await uploadFile(audioFile, "audio");
-            const imageUrl = await uploadFile(imageFile, "imagen");
+            try {
+                const audioUrl = await uploadFile(audioFile, "audio");
+                const imageUrl = await uploadFile(imageFile, "imagen");
 
-            if (!audioUrl || !imageUrl) {
-                alert("Error al subir los archivos.");
-                return;
+                if (!audioUrl || !imageUrl) {
+                    throw new Error("Error al subir los archivos");
+                }
+
+                const { error } = await supabase
+                    .from("posts")
+                    .insert([{
+                        imagen: imageUrl,
+                        audio: audioUrl,
+                        usuario: user.displayName,
+                        fecha: new Date().toISOString()
+                    }]);
+
+                if (error) throw error;
+
+                alert("Post subido correctamente.");
+                document.getElementById("imageInput").value = "";
+                document.getElementById("audioInput").value = "";
+                await fetchPosts();
+            } catch (error) {
+                console.error("Error al subir post:", error);
+                alert("Error al subir el post: " + error.message);
             }
-
-            const { data, error } = await supabase
-                .from("posts")
-                .insert([{ 
-                    imagen: imageUrl, 
-                    audio: audioUrl, 
-                    usuario: user.displayName,
-                    fecha: new Date() 
-                }]);
-
-            if (error) {
-                console.error("Error al guardar en la base de datos:", error);
-                alert("Error al guardar en la base de datos.");
-                return;
-            }
-
-            alert("Post subido correctamente.");
-            fetchPosts();
         }
 
         // 🔹 Obtener y mostrar posts
         async function fetchPosts() {
-            const { data, error } = await supabase.from("posts").select("*").order("fecha", { ascending: false });
+            try {
+                const { data, error } = await supabase
+                    .from("posts")
+                    .select("*")
+                    .order("fecha", { ascending: false });
 
-            if (error) {
+                if (error) throw error;
+
+                const postsDiv = document.getElementById("posts");
+                postsDiv.innerHTML = "";
+
+                data.forEach(post => {
+                    const postElement = document.createElement("div");
+                    postElement.innerHTML = `
+                        <h3>${post.usuario}</h3>
+                        <img src="${post.imagen}" style="max-width: 200px;">
+                        <br>
+                        <audio controls src="${post.audio}"></audio>
+                        <p>${new Date(post.fecha).toLocaleString()}</p>
+                        <hr>
+                    `;
+                    postsDiv.appendChild(postElement);
+                });
+            } catch (error) {
                 console.error("Error al obtener posts:", error);
-                return;
+                alert("Error al cargar los posts: " + error.message);
             }
-
-            const postsDiv = document.getElementById("posts");
-            postsDiv.innerHTML = "";
-
-            data.forEach(post => {
-                const postElement = document.createElement("div");
-                postElement.innerHTML = `
-                    <h3>${post.usuario}</h3>
-                    <img src="${post.imagen}" style="max-width: 200px;">
-                    <br>
-                    <audio controls src="${post.audio}"></audio>
-                    <p>${new Date(post.fecha).toLocaleString()}</p>
-                    <hr>
-                `;
-                postsDiv.appendChild(postElement);
-            });
         }
 
         // 🔹 Event listeners
