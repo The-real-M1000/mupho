@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -30,14 +31,10 @@
                     <i class="fas fa-bell"></i>
                     <span>Notificaciones</span>
                 </a>
-                <a href="#" class="nav-item profile">
+                <a href="#" class="nav-item">
                     <i class="fas fa-user"></i>
                     <span>Perfil</span>
                 </a>
-                <button id="logout" class="logout-button">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Cerrar sesión</span>
-                </button>
             </nav>
             <button id="createPost" class="post-button">
                 <i class="fas fa-plus"></i>
@@ -62,9 +59,10 @@
             <div id="uploadSection" class="upload-section" style="display: none;">
                 <header class="content-header">
                     <div class="tabs">
-                        <button class="tab active" data-filter="all">Para ti</button>
-                        <button class="tab" data-filter="new">Nuevo</button>
-                        <button class="tab" data-filter="popular">Popular</button>
+                        <button class="tab active">Para ti</button>
+                        <button class="tab">Siguiendo</button>
+                        <button class="tab">Popular</button>
+                        <button class="tab">Nuevo</button>
                     </div>
                 </header>
 
@@ -93,6 +91,10 @@
                     <span class="posts-count">1,234 posts</span>
                 </div>
             </div>
+            <button id="logout" class="logout-button">
+                <i class="fas fa-sign-out-alt"></i>
+                Cerrar sesión
+            </button>
         </aside>
     </div>
 
