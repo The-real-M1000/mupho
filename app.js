@@ -1,4 +1,4 @@
- // Configuración de Firebase
+// Configuración de Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
     projectId: "mupho-ee0c0",
@@ -16,13 +16,6 @@ const provider = new firebase.auth.GoogleAuthProvider();
 let currentPhotoUrl = null;
 let currentAudioUrl = null;
 let currentUser = null;
-
-// Configuración de Cloudinary
-const cloudinaryConfig = {
-    cloudName: 'ddmi89zwa',
-    uploadPreset: 'mupho_preset',
-    folder: 'mupho'
-};
 
 // Elementos DOM
 const modal = document.getElementById('uploadModal');
@@ -66,140 +59,50 @@ function showError(message) {
     }, 5000);
 }
 
-// Configuración de widgets de Cloudinary
-const photoWidget = cloudinary.createUploadWidget(
-    {
-        ...cloudinaryConfig,
-        sources: ['local', 'camera'],
-        maxFiles: 1,
-        maxFileSize: 5000000,
-        acceptedFiles: 'image/*'
-    },
-    handleUpload
-);
-
-const audioWidget = cloudinary.createUploadWidget(
-    {
-        ...cloudinaryConfig,
-        sources: ['local'],
-        maxFiles: 1,
-        maxFileSize: 10000000,
-        acceptedFiles: 'audio/*'
-    },
-    handleUpload
-);
-
-document.getElementById('uploadPhoto').addEventListener('click', () => {
-    photoWidget.open();
-});
-
-document.getElementById('uploadAudio').addEventListener('click', () => {
-    audioWidget.open();
-});
-
-function handleUpload(error, result) {
-    if (error) {
-        showError('Error al subir el archivo: ' + error.message);
+// Funcionalidad de likes
+function handleLike(postId) {
+    if (!currentUser) {
+        showError('Debes iniciar sesión para dar like');
         return;
     }
 
-    if (result.event === "success") {
-        const url = result.info.secure_url;
-        uploadProgress.style.display = 'block';
-        
-        if (result.info.resource_type === 'image') {
-            currentPhotoUrl = url;
-            uploadProgress.textContent = 'Foto subida correctamente';
-            document.getElementById('preview').innerHTML = `<img src="${url}" style="max-width: 300px;">`;
-        } else if (result.info.resource_type === 'video') {
-            currentAudioUrl = url;
-            uploadProgress.textContent = 'Audio subido correctamente';
-            document.getElementById('preview').innerHTML += `<audio controls src="${url}"></audio>`;
+    const postRef = database.ref(`posts/${postId}/likes/${currentUser.uid}`);
+    postRef.once('value', snapshot => {
+        if (snapshot.exists()) {
+            postRef.remove(); // Quitar like
+        } else {
+            postRef.set(true); // Añadir like
         }
-        
-        if (currentPhotoUrl && currentAudioUrl) {
-            publishButton.disabled = false;
-            uploadProgress.textContent = '¡Listo para publicar!';
-        }
-    }
+    });
 }
 
-// Event Listeners para autenticación
-document.getElementById('loginButton').addEventListener('click', () => {
-    auth.signInWithPopup(provider).catch(error => {
-        showError('Error al iniciar sesión: ' + error.message);
-    });
-});
-
-document.getElementById('logout').addEventListener('click', () => {
-    auth.signOut().catch(error => {
-        showError('Error al cerrar sesión: ' + error.message);
-    });
-});
-
-// Manejador de estado de autenticación
-auth.onAuthStateChanged((user) => {
-    currentUser = user;
-    if (user) {
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('uploadSection').style.display = 'block';
-        document.getElementById('userInfo').innerHTML = `
-            <img src="${user.photoURL}" alt="Usuario">
-            <span>Bienvenido, ${user.displayName}</span>
-        `;
-        loadPosts();
-    } else {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('uploadSection').style.display = 'none';
-        document.getElementById('userInfo').innerHTML = '';
-    }
-});
-
-// Funciones para manejar posts
-publishButton.addEventListener('click', () => {
-    const title = document.getElementById('postTitle').value.trim();
-    if (!title) {
-        showError('Por favor, añade un título a tu publicación');
+// Funcionalidad de comentarios
+function handleComment(postId, comment) {
+    if (!currentUser) {
+        showError('Debes iniciar sesión para comentar');
         return;
     }
 
-    if (currentPhotoUrl && currentAudioUrl) {
-        const post = {
-            title: title,
-            photoUrl: currentPhotoUrl,
-            audioUrl: currentAudioUrl,
-            userId: currentUser.uid,
-            userName: currentUser.displayName,
-            userPhoto: currentUser.photoURL,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        };
+    const commentData = {
+        userId: currentUser.uid,
+        userName: currentUser.displayName,
+        userPhoto: currentUser.photoURL,
+        comment: comment,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
 
-        database.ref('posts').push(post)
-            .then(() => {
-                modal.style.display = 'none';
-                resetUploadForm();
-            })
-            .catch(error => {
-                showError('Error al publicar: ' + error.message);
-            });
-    }
-});
+    database.ref(`posts/${postId}/comments`).push(commentData);
+}
 
+// Cargar posts
 function loadPosts() {
     const postsRef = database.ref('posts');
-    postsRef.on('value', (snapshot) => {
+    postsRef.on('value', snapshot => {
         const postsContainer = document.getElementById('posts');
         postsContainer.innerHTML = '';
-        
-        const posts = [];
-        snapshot.forEach((childSnapshot) => {
-            posts.push({ id: childSnapshot.key, ...childSnapshot.val() });
-        });
 
-        // Ordenar posts por timestamp (más recientes primero)
-        posts.sort((a, b) => b.timestamp - a.timestamp);
-
-        posts.forEach(post => {
+        snapshot.forEach(childSnapshot => {
+            const post = childSnapshot.val();
             const postElement = document.createElement('div');
             postElement.className = 'post';
             postElement.innerHTML = `
@@ -213,35 +116,49 @@ function loadPosts() {
                 <div class="post-title">${post.title}</div>
                 <img src="${post.photoUrl}" alt="${post.title}">
                 <audio controls src="${post.audioUrl}"></audio>
+                <button class="like-button"><i class="fas fa-heart"></i> Like</button>
+                <div class="comments">
+                    <input type="text" class="comment-input" placeholder="Añade un comentario...">
+                    <button class="comment-button">Comentar</button>
+                    <div class="comment-list"></div>
+                </div>
             `;
             postsContainer.appendChild(postElement);
+
+            // Añadir event listeners para likes y comentarios
+            const likeButton = postElement.querySelector('.like-button');
+            likeButton.addEventListener('click', () => handleLike(childSnapshot.key));
+
+            const commentButton = postElement.querySelector('.comment-button');
+            commentButton.addEventListener('click', () => {
+                const commentInput = postElement.querySelector('.comment-input');
+                const comment = commentInput.value.trim();
+                if (comment) {
+                    handleComment(childSnapshot.key, comment);
+                    commentInput.value = '';
+                }
+            });
         });
     });
 }
-// Funcionalidad del menú móvil
-document.addEventListener('DOMContentLoaded', () => {
-    // Crear botón del menú móvil
-    const mobileButton = document.createElement('button');
-    mobileButton.className = 'mobile-menu-button';
-    mobileButton.innerHTML = '<i class="fas fa-bars"></i>';
-    document.body.appendChild(mobileButton);
 
-    // Toggle sidebar
-    mobileButton.addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.toggle('active');
-    });
+// Iniciar
+auth.onAuthStateChanged(user => {
+    if (user) {
+        currentUser = user;
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'block';
+        loadPosts();
+    } else {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('uploadSection').style.display = 'none';
+    }
+});
 
-    // Cerrar sidebar al hacer click fuera
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.sidebar') && 
-            !e.target.closest('.mobile-menu-button')) {
-            document.querySelector('.sidebar').classList.remove('active');
-        }
-    });
+document.getElementById('loginButton').addEventListener('click', () => {
+    auth.signInWithPopup(provider);
+});
 
-    // Añadir lazy loading a las imágenes existentes
-    const images = document.querySelectorAll('img:not([loading])');
-    images.forEach(img => {
-        img.setAttribute('loading', 'lazy');
-    });
+document.getElementById('logout').addEventListener('click', () => {
+    auth.signOut();
 });
