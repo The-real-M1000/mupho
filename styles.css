@@ -146,7 +146,29 @@ body {
     margin-bottom: 1rem;
 }
 
-{
+/* Post images */
+.post img:not(.post-header img) {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: contain;
+    border-radius: 1rem;
+    margin: 0.5rem 0;
+    background-color: var(--hover-color);
+}
+
+/* Preview images */
+#preview img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 1rem;
+    margin: 0.5rem 0;
+    background-color: var(--hover-color);
+}
 
 /* Login section */
 .login-section {
@@ -246,18 +268,6 @@ body {
     margin: 1rem 0;
 }
 
-#preview img {
-    width: 100%;
-    max-width: 600px;
-    height: 400px; /* Altura fija para desktop */
-    object-fit: cover; /* Cambiado de contain a cover */
-    border-radius: 1rem;
-    margin: 1rem auto; /* Cambiado de 0 a auto para centrar */
-    display: block;
-    background-color: var(--hover-color);
-}
-
-
 #preview audio {
     width: 100%;
     margin-top: 1rem;
@@ -320,7 +330,7 @@ body {
 
     .post img:not(.post-header img),
     #preview img {
-        height: 350px; /* Ajustado para tablets grandes */
+        max-height: 350px;
     }
 }
 
@@ -335,11 +345,6 @@ body {
 
     .main-content {
         width: calc(100% - var(--sidebar-width));
-    }
-
-    .post img:not(.post-header img),
-    #preview img {
-        height: 300px; /* Ajustado para tablets */
     }
 }
 
@@ -369,9 +374,7 @@ body {
 
     .post img:not(.post-header img),
     #preview img {
-        height: 300px; /* Mantenido para tablets pequeñas */
         max-height: 300px;
-        object-fit: cover;
     }
 
     .modal-content {
@@ -383,7 +386,6 @@ body {
 @media (max-width: 480px) {
     .post img:not(.post-header img),
     #preview img {
-        height: 250px; /* Ajustado para móviles */
         max-height: 250px;
     }
 
@@ -542,5 +544,28 @@ body {
 }
 
 .user-input input::placeholder {
+    color: var(--secondary-text);
+}
+
+/* Search container */
+.search-container {
+    position: relative;
+    margin: 1rem;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    background-color: var(--hover-color);
+    border: none;
+    border-radius: 9999px;
+    color: var(--text-color);
+}
+
+.search-container i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--secondary-text);
 }
