@@ -1,8 +1,8 @@
 // Configuración de Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
-    projectId: "mupho-ee0c0",
     authDomain: "mupho-ee0c0.firebaseapp.com",
+    projectId: "mupho-ee0c0",
     databaseURL: "https://mupho-ee0c0-default-rtdb.firebaseio.com"
 };
 
@@ -58,6 +58,101 @@ function showError(message) {
         errorMessage.style.display = 'none';
     }, 5000);
 }
+
+// Configuración de Cloudinary
+const cloudinaryConfig = {
+    cloudName: 'ddmi89zwa',
+    uploadPreset: 'mupho_preset',
+    folder: 'mupho'
+};
+
+// Widgets de Cloudinary
+const photoWidget = cloudinary.createUploadWidget(
+    {
+        ...cloudinaryConfig,
+        sources: ['local', 'camera'],
+        maxFiles: 1,
+        maxFileSize: 5000000,
+        acceptedFiles: 'image/*'
+    },
+    handleUpload
+);
+
+const audioWidget = cloudinary.createUploadWidget(
+    {
+        ...cloudinaryConfig,
+        sources: ['local'],
+        maxFiles: 1,
+        maxFileSize: 10000000,
+        acceptedFiles: 'audio/*'
+    },
+    handleUpload
+);
+
+document.getElementById('uploadPhoto').addEventListener('click', () => {
+    photoWidget.open();
+});
+
+document.getElementById('uploadAudio').addEventListener('click', () => {
+    audioWidget.open();
+});
+
+function handleUpload(error, result) {
+    if (error) {
+        showError('Error al subir el archivo: ' + error.message);
+        return;
+    }
+
+    if (result.event === "success") {
+        const url = result.info.secure_url;
+        uploadProgress.style.display = 'block';
+
+        if (result.info.resource_type === 'image') {
+            currentPhotoUrl = url;
+            uploadProgress.textContent = 'Foto subida correctamente';
+            document.getElementById('preview').innerHTML = `<img src="${url}" style="max-width: 300px;">`;
+        } else if (result.info.resource_type === 'video') {
+            currentAudioUrl = url;
+            uploadProgress.textContent = 'Audio subido correctamente';
+            document.getElementById('preview').innerHTML += `<audio controls src="${url}"></audio>`;
+        }
+
+        if (currentPhotoUrl && currentAudioUrl) {
+            publishButton.disabled = false;
+            uploadProgress.textContent = '¡Listo para publicar!';
+        }
+    }
+}
+
+// Funcionalidad de inicio de sesión
+document.getElementById('loginButton').addEventListener('click', () => {
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            console.log("Usuario autenticado:", result.user);
+        })
+        .catch((error) => {
+            console.error("Error al iniciar sesión:", error);
+            showError("Error al iniciar sesión: " + error.message);
+        });
+});
+
+// Manejador de estado de autenticación
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        currentUser = user;
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'block';
+        document.getElementById('userInfo').innerHTML = `
+            <img src="${user.photoURL}" alt="Usuario">
+            <span>Bienvenido, ${user.displayName}</span>
+        `;
+        loadPosts();
+    } else {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('userInfo').innerHTML = '';
+    }
+});
 
 // Funcionalidad de likes
 function handleLike(postId) {
@@ -142,23 +237,32 @@ function loadPosts() {
     });
 }
 
-// Iniciar
-auth.onAuthStateChanged(user => {
-    if (user) {
-        currentUser = user;
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('uploadSection').style.display = 'block';
-        loadPosts();
-    } else {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('uploadSection').style.display = 'none';
+// Publicar post
+publishButton.addEventListener('click', () => {
+    const title = document.getElementById('postTitle').value.trim();
+    if (!title) {
+        showError('Por favor, añade un título a tu publicación');
+        return;
     }
-});
 
-document.getElementById('loginButton').addEventListener('click', () => {
-    auth.signInWithPopup(provider);
-});
+    if (currentPhotoUrl && currentAudioUrl) {
+        const post = {
+            title: title,
+            photoUrl: currentPhotoUrl,
+            audioUrl: currentAudioUrl,
+            userId: currentUser.uid,
+            userName: currentUser.displayName,
+            userPhoto: currentUser.photoURL,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
 
-document.getElementById('logout').addEventListener('click', () => {
-    auth.signOut();
+        database.ref('posts').push(post)
+            .then(() => {
+                modal.style.display = 'none';
+                resetUploadForm();
+            })
+            .catch(error => {
+                showError('Error al publicar: ' + error.message);
+            });
+    }
 });
