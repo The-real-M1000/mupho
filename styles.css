@@ -108,6 +108,62 @@ button:disabled {
     object-fit: cover;
 }
 
+.upload-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.upload-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.upload-button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.upload-button:hover {
+    opacity: 0.9;
+}
+
+.upload-button i {
+    margin-right: 5px;
+}
+
+/* Mantener responsive pero sin apilar los botones */
+@media (max-width: 768px) {
+    .upload-buttons {
+        gap: 8px;
+    }
+    
+    .upload-button {
+        padding: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload-buttons {
+        gap: 6px;
+    }
+    
+    .upload-button {
+        font-size: 0.9em;
+    }
+}
+
 /* Ajustes para imágenes de Cloudinary */
 .post img:not(.post-header img) {
     width: 100%;
