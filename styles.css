@@ -146,58 +146,7 @@ body {
     margin-bottom: 1rem;
 }
 
-/* Imágenes en posts */
-.post img:not(.post-header img) {
-    width: 100%;
-    max-width: 600px;
-    height: auto;
-    object-fit: contain;
-    border-radius: 1rem;
-    margin: 1rem 0;
-    display: block;
-    background-color: var(--hover-color);
-}
-
-/* Audio player */
-.post audio {
-    width: 100%;
-    margin-top: 1rem;
-    border-radius: 0.5rem;
-    background-color: var(--hover-color);
-}
-
-/* Sección de trending */
-.trending {
-    position: fixed;
-    right: 0;
-    width: var(--trending-width);
-    height: 100vh;
-    padding: 1rem;
-    background-color: var(--background-dark);
-    border-left: 1px solid var(--border-color);
-}
-
-.search-container {
-    position: relative;
-    margin-bottom: 1rem;
-}
-
-.search-container input {
-    width: 100%;
-    padding: 0.75rem 2.5rem;
-    background-color: var(--hover-color);
-    border: 1px solid var(--border-color);
-    border-radius: 9999px;
-    color: var(--text-color);
-}
-
-.search-container i {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--secondary-text);
-}
+{
 
 /* Login section */
 .login-section {
@@ -300,13 +249,14 @@ body {
 #preview img {
     width: 100%;
     max-width: 600px;
-    height: auto;
-    object-fit: contain;
+    height: 400px; /* Altura fija para desktop */
+    object-fit: cover; /* Cambiado de contain a cover */
     border-radius: 1rem;
-    margin: 1rem 0;
+    margin: 1rem auto; /* Cambiado de 0 a auto para centrar */
     display: block;
     background-color: var(--hover-color);
 }
+
 
 #preview audio {
     width: 100%;
@@ -367,6 +317,11 @@ body {
     :root {
         --trending-width: 300px;
     }
+
+    .post img:not(.post-header img),
+    #preview img {
+        height: 350px; /* Ajustado para tablets grandes */
+    }
 }
 
 @media (max-width: 1024px) {
@@ -380,6 +335,11 @@ body {
 
     .main-content {
         width: calc(100% - var(--sidebar-width));
+    }
+
+    .post img:not(.post-header img),
+    #preview img {
+        height: 300px; /* Ajustado para tablets */
     }
 }
 
@@ -409,8 +369,9 @@ body {
 
     .post img:not(.post-header img),
     #preview img {
-        height: auto;
+        height: 300px; /* Mantenido para tablets pequeñas */
         max-height: 300px;
+        object-fit: cover;
     }
 
     .modal-content {
@@ -422,6 +383,7 @@ body {
 @media (max-width: 480px) {
     .post img:not(.post-header img),
     #preview img {
+        height: 250px; /* Ajustado para móviles */
         max-height: 250px;
     }
 
