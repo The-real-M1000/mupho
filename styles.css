@@ -39,262 +39,138 @@ body {
     height: 100vh;
     padding: 1rem;
     border-right: 1px solid var(--border-color);
+    background-color: var(--background-dark);
+    z-index: 100;
 }
 
-.logo {
-    font-size: 2rem;
-    color: var(--text-color);
-    margin-bottom: 2rem;
-    padding: 0.5rem;
+/* Posts Styles */
+.post {
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
 }
 
-.main-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.nav-item {
+.post-header {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    padding: 0.75rem 1rem;
-    color: var(--text-color);
-    text-decoration: none;
-    border-radius: 9999px;
-    transition: background-color 0.2s;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
-.nav-item:hover {
-    background-color: var(--hover-color);
+.post-header img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
-.nav-item.active {
-    font-weight: bold;
+.post-date {
+    color: var(--secondary-text);
+    font-size: 0.875rem;
 }
 
-.nav-item i {
-    font-size: 1.25rem;
+.post-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
 }
 
-.post-button {
-    width: 90%;
+.post img {
+    width: 100%;
+    max-height: 500px;
+    object-fit: cover;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+}
+
+.post audio {
+    width: 100%;
     margin-top: 1rem;
-    padding: 1rem;
-    background-color: var(--primary-color);
-    color: var(--text-color);
-    border: none;
-    border-radius: 9999px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.2s;
 }
 
-.post-button:hover {
+/* User Info Styles */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Upload Progress */
+.upload-progress {
+    background-color: var(--hover-color);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    display: none;
+}
+
+/* Error Message */
+.error {
+    background-color: #ff4444;
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    display: none;
+}
+
+/* Preview Container */
+#preview {
+    margin: 1rem 0;
+}
+
+#preview img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 1rem;
+}
+
+#preview audio {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* Audio Player Customization */
+audio {
+    border-radius: 1rem;
     background-color: var(--hover-color);
 }
 
-/* Main Content */
-.main-content {
-    border-right: 1px solid var(--border-color);
-    min-height: 100vh;
-    margin-left: var(--sidebar-width);
-}
-
-.content-header {
-    position: sticky;
-    top: 0;
-    background-color: var(--background-dark);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem;
-    z-index: 10;
-}
-
-.tabs {
+/* Upload Buttons */
+.upload-buttons {
     display: flex;
     gap: 1rem;
+    margin-top: 1rem;
 }
 
-.tab {
-    background: none;
-    border: none;
-    color: var(--secondary-text);
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.tab.active {
-    color: var(--text-color);
-    border-bottom: 2px solid var(--primary-color);
-}
-
-/* Posts Container */
-.posts-container {
-    padding: 1rem;
-}
-
-/* Trending Section */
-.trending {
-    position: fixed;
-    right: 0;
-    width: var(--trending-width);
-    height: 100vh;
-    padding: 1rem;
-}
-
-.search-container {
-    position: relative;
-    margin-bottom: 1rem;
-}
-
-.search-container input {
-    width: 100%;
-    padding: 0.75rem 2.5rem;
+.upload-button {
+    padding: 0.75rem 1.5rem;
     background-color: var(--hover-color);
     border: 1px solid var(--border-color);
     border-radius: 9999px;
     color: var(--text-color);
-}
-
-.search-container i {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--secondary-text);
-}
-
-.trending-section {
-    background-color: var(--hover-color);
-    border-radius: 1rem;
-    padding: 1rem;
-    margin-top: 1rem;
-}
-
-.trending-item {
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.trending-item:last-child {
-    border-bottom: none;
-}
-
-.category {
-    color: var(--secondary-text);
-    font-size: 0.875rem;
-}
-
-.posts-count {
-    display: block;
-    color: var(--secondary-text);
-    font-size: 0.875rem;
-}
-
-/* Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--modal-background);
-    z-index: 1000;
-}
-
-.modal-content {
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    margin: 2rem auto;
-    background-color: var(--background-dark);
-    border-radius: 1rem;
-    border: 1px solid var(--border-color);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.close-modal {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 1.5rem;
     cursor: pointer;
-}
-
-.publish-button {
-    background-color: var(--primary-color);
-    color: var(--text-color);
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 9999px;
-    cursor: pointer;
-}
-
-.publish-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.modal-body {
-    padding: 1rem;
-}
-
-/* Image Handling */
-.preview-container img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 1rem;
-    margin-top: 1rem;
-}
-
-/* Login Section */
-.login-section {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 1rem;
-}
-
-.login-card {
-    background-color: var(--background-dark);
-    padding: 2rem;
-    border-radius: 1rem;
-    text-align: center;
-    max-width: 400px;
-    width: 100%;
-}
-
-.logo-large {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
-
-.login-button {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.5rem;
-    width: 100%;
-    padding: 0.75rem;
-    background-color: var(--primary-color);
-    color: var(--text-color);
-    border: none;
-    border-radius: 9999px;
-    cursor: pointer;
-    margin-top: 1rem;
 }
 
-/* Mobile Menu Button (Hidden by default) */
+.upload-button:hover {
+    background-color: var(--primary-color);
+}
+
+/* Mobile Menu Button */
 .mobile-menu-button {
     display: none;
     position: fixed;
@@ -304,7 +180,7 @@ body {
     border: none;
     color: var(--text-color);
     font-size: 1.5rem;
-    z-index: 100;
+    z-index: 1000;
     cursor: pointer;
 }
 
@@ -337,8 +213,6 @@ body {
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
-        z-index: 90;
-        background-color: var(--background-dark);
     }
 
     .sidebar.active {
@@ -349,29 +223,33 @@ body {
         margin-left: 0;
     }
 
+    .post img {
+        max-height: 300px;
+    }
+
     .modal-content {
-        margin: 1rem;
-        max-width: calc(100% - 2rem);
+        width: 95%;
+        margin: 1rem auto;
     }
 }
 
-/* Dark Mode Specific */
-.dark {
-    color-scheme: dark;
-}
-
-/* Loading States */
+/* Loading Animation */
 .loading {
-    opacity: 0.7;
-    pointer-events: none;
+    position: relative;
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: loading 1.5s infinite;
 }
 
-.fade-in {
-    animation: fadeIn 0.3s ease;
+@keyframes loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
