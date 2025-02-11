@@ -1,4 +1,4 @@
- // Configuración de Firebase
+// Configuración de Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
     projectId: "mupho-ee0c0",
@@ -218,24 +218,26 @@ function loadPosts() {
         });
     });
 }
+
 // Funcionalidad del menú móvil
 document.addEventListener('DOMContentLoaded', () => {
-    // Crear botón del menú móvil
     const mobileButton = document.createElement('button');
     mobileButton.className = 'mobile-menu-button';
     mobileButton.innerHTML = '<i class="fas fa-bars"></i>';
     document.body.appendChild(mobileButton);
 
+    const sidebar = document.querySelector('.sidebar');
+
     // Toggle sidebar
     mobileButton.addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.toggle('active');
+        sidebar.classList.toggle('active');
     });
 
     // Cerrar sidebar al hacer click fuera
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.sidebar') && 
             !e.target.closest('.mobile-menu-button')) {
-            document.querySelector('.sidebar').classList.remove('active');
+            sidebar.classList.remove('active');
         }
     });
 
