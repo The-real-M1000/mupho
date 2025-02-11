@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
@@ -35,12 +35,22 @@
                     <i class="fas fa-user"></i>
                     <span>Perfil</span>
                 </a>
+                <!-- Botón de cerrar sesión en el menú de perfil -->
+                <button id="logout" class="logout-button">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar sesión</span>
+                </button>
             </nav>
             <button id="createPost" class="post-button">
                 <i class="fas fa-plus"></i>
                 <span>Crear Post</span>
             </button>
         </aside>
+
+        <!-- Botón del menú móvil -->
+        <button class="mobile-menu-button">
+            <i class="fas fa-bars"></i>
+        </button>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -91,10 +101,6 @@
                     <span class="posts-count">1,234 posts</span>
                 </div>
             </div>
-            <button id="logout" class="logout-button">
-                <i class="fas fa-sign-out-alt"></i>
-                Cerrar sesión
-            </button>
         </aside>
     </div>
 
