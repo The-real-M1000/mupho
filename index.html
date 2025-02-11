@@ -1,116 +1,219 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir a Google Drive</title>
+    <title>Mupho - Fotos y Audios</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #loginSection, #uploadSection {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        .post {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .post img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .post audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        #userInfo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #userInfo img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+    </style>
 </head>
 <body>
-    <h2>Autenticación</h2>
-    <button id="loginBtn">Iniciar Sesión con Google</button>
-    <button id="logoutBtn" style="display: none;">Cerrar Sesión</button>
-    <p id="userInfo"></p>
+    <div class="container">
+        <div id="loginSection">
+            <h1>Mupho</h1>
+            <button id="loginButton">Iniciar sesión con Google</button>
+        </div>
 
-    <h2>Subir Archivo</h2>
-    <input type="file" id="fileInput">
-    <button id="uploadBtn">Subir a Google Drive</button>
-
-    <h2>Archivos Subidos</h2>
-    <div id="files"></div>
+        <div id="uploadSection" style="display: none;">
+            <div id="userInfo"></div>
+            <button id="uploadPhoto">Subir Foto</button>
+            <button id="uploadAudio">Subir Audio</button>
+            <button id="publish" disabled>Publicar</button>
+            <button id="logout">Cerrar sesión</button>
+            
+            <div id="preview"></div>
+            <div id="posts"></div>
+        </div>
+    </div>
 
     <script>
-        // 🔹 Credenciales de Google Drive
-        const CLIENT_ID = "267067796738-dckkbrvsfn5mhn0p5i7du7g0fn567gtb.apps.googleusercontent.com";
-        const API_KEY = "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";
-        const FOLDER_ID = "12fU6kj1wdDBHCGY5vzX7E8qV-t3QjP4m";
-        const SCOPES = "https://www.googleapis.com/auth/drive.file";
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
+            projectId: "mupho-ee0c0",
+            authDomain: "mupho-ee0c0.firebaseapp.com"
+        };
 
-        let authInstance;
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
 
-        function handleAuthClick() {
-            authInstance.signIn();
-        }
+        // Variables para almacenar las URLs de los archivos
+        let currentPhotoUrl = null;
+        let currentAudioUrl = null;
 
-        function handleSignOutClick() {
-            authInstance.signOut();
-            document.getElementById("userInfo").textContent = "";
-            document.getElementById("logoutBtn").style.display = "none";
-            document.getElementById("loginBtn").style.display = "block";
-        }
+        // Configuración de Cloudinary
+        const cloudinaryConfig = {
+            cloudName: 'ddmi89zwa',
+            uploadPreset: 'ml_default'
+        };
 
-        function initAuth() {
-            gapi.load("client:auth2", () => {
-                gapi.client.init({
-                    apiKey: API_KEY,
-                    clientId: CLIENT_ID,
-                    scope: SCOPES
-                }).then(() => {
-                    authInstance = gapi.auth2.getAuthInstance();
-                    authInstance.isSignedIn.listen(updateSigninStatus);
-                    updateSigninStatus(authInstance.isSignedIn.get());
-                });
-            });
-        }
+        // Elementos DOM
+        const loginButton = document.getElementById('loginButton');
+        const uploadSection = document.getElementById('uploadSection');
+        const loginSection = document.getElementById('loginSection');
+        const userInfo = document.getElementById('userInfo');
+        const publishButton = document.getElementById('publish');
+        const postsContainer = document.getElementById('posts');
+        const logoutButton = document.getElementById('logout');
 
-        function updateSigninStatus(isSignedIn) {
-            if (isSignedIn) {
-                let user = authInstance.currentUser.get().getBasicProfile();
-                document.getElementById("userInfo").textContent = `Bienvenido, ${user.getName()}`;
-                document.getElementById("logoutBtn").style.display = "block";
-                document.getElementById("loginBtn").style.display = "none";
+        // Event Listeners
+        loginButton.addEventListener('click', () => {
+            auth.signInWithPopup(provider);
+        });
+
+        logoutButton.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // Manejador de estado de autenticación
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                loginSection.style.display = 'none';
+                uploadSection.style.display = 'block';
+                userInfo.innerHTML = `
+                    <img src="${user.photoURL}" alt="Usuario">
+                    <span>Bienvenido, ${user.displayName}</span>
+                `;
             } else {
-                document.getElementById("userInfo").textContent = "";
-                document.getElementById("logoutBtn").style.display = "none";
-                document.getElementById("loginBtn").style.display = "block";
+                loginSection.style.display = 'block';
+                uploadSection.style.display = 'none';
+                userInfo.innerHTML = '';
+            }
+        });
+
+        // Configuración del widget de Cloudinary
+        const photoWidget = cloudinary.createUploadWidget(
+            {
+                ...cloudinaryConfig,
+                sources: ['local', 'camera'],
+                maxFiles: 1,
+                maxFileSize: 5000000,
+                acceptedFiles: 'image/*'
+            },
+            handleUpload
+        );
+
+        const audioWidget = cloudinary.createUploadWidget(
+            {
+                ...cloudinaryConfig,
+                sources: ['local'],
+                maxFiles: 1,
+                maxFileSize: 10000000,
+                acceptedFiles: 'audio/*'
+            },
+            handleUpload
+        );
+
+        document.getElementById('uploadPhoto').addEventListener('click', () => {
+            photoWidget.open();
+        });
+
+        document.getElementById('uploadAudio').addEventListener('click', () => {
+            audioWidget.open();
+        });
+
+        function handleUpload(error, result) {
+            if (!error && result && result.event === "success") {
+                const url = result.info.secure_url;
+                if (result.info.resource_type === 'image') {
+                    currentPhotoUrl = url;
+                    document.getElementById('preview').innerHTML = `<img src="${url}" style="max-width: 300px;">`;
+                } else if (result.info.resource_type === 'video') { // Cloudinary trata los audios como "video"
+                    currentAudioUrl = url;
+                    document.getElementById('preview').innerHTML += `<audio controls src="${url}"></audio>`;
+                }
+                
+                if (currentPhotoUrl && currentAudioUrl) {
+                    publishButton.disabled = false;
+                }
             }
         }
 
-        async function uploadFile() {
-            const file = document.getElementById("fileInput").files[0];
-            if (!file) {
-                alert("Selecciona un archivo.");
-                return;
+        publishButton.addEventListener('click', () => {
+            if (currentPhotoUrl && currentAudioUrl) {
+                const post = document.createElement('div');
+                post.className = 'post';
+                post.innerHTML = `
+                    <img src="${currentPhotoUrl}" alt="Foto publicada">
+                    <audio controls src="${currentAudioUrl}"></audio>
+                `;
+                postsContainer.insertBefore(post, postsContainer.firstChild);
+                
+                // Resetear el estado
+                currentPhotoUrl = null;
+                currentAudioUrl = null;
+                publishButton.disabled = true;
+                document.getElementById('preview').innerHTML = '';
             }
-
-            const metadata = {
-                name: file.name,
-                parents: [FOLDER_ID]
-            };
-
-            const form = new FormData();
-            form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-            form.append("file", file);
-
-            const accessToken = gapi.auth.getToken().access_token;
-
-            const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${accessToken}` },
-                body: form
-            });
-
-            const data = await response.json();
-            const fileId = data.id;
-
-            await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ role: "reader", type: "anyone" })
-            });
-
-            const fileUrl = `https://drive.google.com/uc?id=${fileId}`;
-            document.getElementById("files").innerHTML += `<p><a href="${fileUrl}" target="_blank">${file.name}</a></p>`;
-        }
-
-        document.getElementById("loginBtn").addEventListener("click", handleAuthClick);
-        document.getElementById("logoutBtn").addEventListener("click", handleSignOutClick);
-        document.getElementById("uploadBtn").addEventListener("click", uploadFile);
+        });
     </script>
-
-    <script async defer src="https://apis.google.com/js/api.js" onload="initAuth()"></script>
 </body>
 </html>
