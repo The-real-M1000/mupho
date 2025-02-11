@@ -1,4 +1,4 @@
-// Configuración de Firebase
+ // Configuración de Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
     projectId: "mupho-ee0c0",
