@@ -6,6 +6,7 @@
     <title>Mupho - Fotos y Audios</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
     <style>
         body {
@@ -21,6 +22,40 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .upload-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
 
         #loginSection, #uploadSection {
@@ -49,19 +84,45 @@
 
         .post {
             border: 1px solid #ddd;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 4px;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .post-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
         }
 
         .post img {
             max-width: 100%;
             height: auto;
+            border-radius: 4px;
         }
 
         .post audio {
             width: 100%;
             margin: 10px 0;
+        }
+
+        .post-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .post-date {
+            color: #666;
+            font-size: 0.9em;
         }
 
         #userInfo {
@@ -86,10 +147,18 @@
             display: none;
         }
 
-        .status {
+        .upload-progress {
             margin: 10px 0;
             padding: 10px;
+            background-color: #e8f0fe;
             border-radius: 4px;
+            display: none;
+        }
+
+        .close-modal {
+            float: right;
+            cursor: pointer;
+            font-size: 1.5em;
         }
     </style>
 </head>
@@ -103,14 +172,24 @@
         <div id="uploadSection" style="display: none;">
             <div id="userInfo"></div>
             <div id="errorMessage" class="error"></div>
-            <div id="uploadStatus" class="status"></div>
-            <button id="uploadPhoto">Subir Foto</button>
-            <button id="uploadAudio">Subir Audio</button>
-            <button id="publish" disabled>Publicar</button>
+            <button id="createPost">Crear nueva publicación</button>
             <button id="logout">Cerrar sesión</button>
-            
-            <div id="preview"></div>
             <div id="posts"></div>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Nueva publicación</h2>
+            <div class="upload-progress"></div>
+            <input type="text" id="postTitle" placeholder="Título de la publicación">
+            <div class="upload-options">
+                <div id="preview"></div>
+                <button id="uploadPhoto">Seleccionar Foto</button>
+                <button id="uploadAudio">Seleccionar Audio</button>
+                <button id="publishPost" disabled>Publicar</button>
+            </div>
         </div>
     </div>
 
@@ -119,76 +198,59 @@
         const firebaseConfig = {
             apiKey: "AIzaSyDG1wZMBobltVFJ1SR_mDbt8INiw3ZxVdQ",
             projectId: "mupho-ee0c0",
-            authDomain: "mupho-ee0c0.firebaseapp.com"
+            authDomain: "mupho-ee0c0.firebaseapp.com",
+            databaseURL: "https://mupho-ee0c0-default-rtdb.firebaseio.com"
         };
 
         // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const database = firebase.database();
         const provider = new firebase.auth.GoogleAuthProvider();
 
         // Variables para almacenar las URLs de los archivos
         let currentPhotoUrl = null;
         let currentAudioUrl = null;
+        let currentUser = null;
 
         // Configuración de Cloudinary
         const cloudinaryConfig = {
             cloudName: 'ddmi89zwa',
-            uploadPreset: 'mupho_preset', // Asegúrate de reemplazar esto con el nombre de tu preset
+            uploadPreset: 'mupho_preset',
             folder: 'mupho'
         };
 
         // Elementos DOM
-        const loginButton = document.getElementById('loginButton');
-        const uploadSection = document.getElementById('uploadSection');
-        const loginSection = document.getElementById('loginSection');
-        const userInfo = document.getElementById('userInfo');
-        const publishButton = document.getElementById('publish');
-        const postsContainer = document.getElementById('posts');
-        const logoutButton = document.getElementById('logout');
-        const errorMessage = document.getElementById('errorMessage');
-        const uploadStatus = document.getElementById('uploadStatus');
+        const modal = document.getElementById('uploadModal');
+        const createPostButton = document.getElementById('createPost');
+        const closeModal = document.querySelector('.close-modal');
+        const publishButton = document.getElementById('publishPost');
+        const uploadProgress = document.querySelector('.upload-progress');
 
-        function showError(message) {
-            errorMessage.style.display = 'block';
-            errorMessage.textContent = message;
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        function updateStatus(message) {
-            uploadStatus.textContent = message;
-        }
-
-        // Event Listeners
-        loginButton.addEventListener('click', () => {
-            auth.signInWithPopup(provider).catch(error => {
-                showError('Error al iniciar sesión: ' + error.message);
-            });
+        // Event Listeners para el modal
+        createPostButton.addEventListener('click', () => {
+            modal.style.display = 'flex';
+            resetUploadForm();
         });
 
-        logoutButton.addEventListener('click', () => {
-            auth.signOut().catch(error => {
-                showError('Error al cerrar sesión: ' + error.message);
-            });
+        closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
         });
 
-        // Manejador de estado de autenticación
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                loginSection.style.display = 'none';
-                uploadSection.style.display = 'block';
-                userInfo.innerHTML = `
-                    <img src="${user.photoURL}" alt="Usuario">
-                    <span>Bienvenido, ${user.displayName}</span>
-                `;
-            } else {
-                loginSection.style.display = 'block';
-                uploadSection.style.display = 'none';
-                userInfo.innerHTML = '';
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
             }
         });
+
+        function resetUploadForm() {
+            currentPhotoUrl = null;
+            currentAudioUrl = null;
+            document.getElementById('postTitle').value = '';
+            document.getElementById('preview').innerHTML = '';
+            publishButton.disabled = true;
+            uploadProgress.style.display = 'none';
+        }
 
         // Configuración del widget de Cloudinary
         const photoWidget = cloudinary.createUploadWidget(
@@ -229,41 +291,128 @@
 
             if (result.event === "success") {
                 const url = result.info.secure_url;
+                uploadProgress.style.display = 'block';
+                
                 if (result.info.resource_type === 'image') {
                     currentPhotoUrl = url;
-                    updateStatus('Foto subida correctamente');
+                    uploadProgress.textContent = 'Foto subida correctamente';
                     document.getElementById('preview').innerHTML = `<img src="${url}" style="max-width: 300px;">`;
                 } else if (result.info.resource_type === 'video') {
                     currentAudioUrl = url;
-                    updateStatus('Audio subido correctamente');
+                    uploadProgress.textContent = 'Audio subido correctamente';
                     document.getElementById('preview').innerHTML += `<audio controls src="${url}"></audio>`;
                 }
                 
                 if (currentPhotoUrl && currentAudioUrl) {
                     publishButton.disabled = false;
-                    updateStatus('¡Listo para publicar!');
+                    uploadProgress.textContent = '¡Listo para publicar!';
                 }
             }
         }
 
-        publishButton.addEventListener('click', () => {
-            if (currentPhotoUrl && currentAudioUrl) {
-                const post = document.createElement('div');
-                post.className = 'post';
-                post.innerHTML = `
-                    <img src="${currentPhotoUrl}" alt="Foto publicada">
-                    <audio controls src="${currentAudioUrl}"></audio>
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.style.display = 'block';
+            errorMessage.textContent = message;
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Event Listeners para autenticación
+        document.getElementById('loginButton').addEventListener('click', () => {
+            auth.signInWithPopup(provider).catch(error => {
+                showError('Error al iniciar sesión: ' + error.message);
+            });
+        });
+
+        document.getElementById('logout').addEventListener('click', () => {
+            auth.signOut().catch(error => {
+                showError('Error al cerrar sesión: ' + error.message);
+            });
+        });
+
+        // Manejador de estado de autenticación
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+                document.getElementById('userInfo').innerHTML = `
+                    <img src="${user.photoURL}" alt="Usuario">
+                    <span>Bienvenido, ${user.displayName}</span>
                 `;
-                postsContainer.insertBefore(post, postsContainer.firstChild);
-                
-                // Resetear el estado
-                currentPhotoUrl = null;
-                currentAudioUrl = null;
-                publishButton.disabled = true;
-                document.getElementById('preview').innerHTML = '';
-                updateStatus('¡Publicación realizada con éxito!');
+                loadPosts();
+            } else {
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('uploadSection').style.display = 'none';
+                document.getElementById('userInfo').innerHTML = '';
             }
         });
+
+        // Funciones para manejar posts
+        publishButton.addEventListener('click', () => {
+            const title = document.getElementById('postTitle').value.trim();
+            if (!title) {
+                showError('Por favor, añade un título a tu publicación');
+                return;
+            }
+
+            if (currentPhotoUrl && currentAudioUrl) {
+                const post = {
+                    title: title,
+                    photoUrl: currentPhotoUrl,
+                    audioUrl: currentAudioUrl,
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName,
+                    userPhoto: currentUser.photoURL,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                database.ref('posts').push(post)
+                    .then(() => {
+                        modal.style.display = 'none';
+                        resetUploadForm();
+                    })
+                    .catch(error => {
+                        showError('Error al publicar: ' + error.message);
+                    });
+            }
+        });
+
+        function loadPosts() {
+            const postsRef = database.ref('posts');
+            postsRef.on('value', (snapshot) => {
+                const postsContainer = document.getElementById('posts');
+                postsContainer.innerHTML = '';
+                
+                const posts = [];
+                snapshot.forEach((childSnapshot) => {
+                    posts.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                });
+
+                // Ordenar posts por timestamp (más recientes primero)
+                posts.sort((a, b) => b.timestamp - a.timestamp);
+
+                posts.forEach(post => {
+                    const postElement = document.createElement('div');
+                    postElement.className = 'post';
+                    postElement.innerHTML = `
+                        <div class="post-header">
+                            <img src="${post.userPhoto}" alt="${post.userName}">
+                            <div>
+                                <div>${post.userName}</div>
+                                <div class="post-date">${new Date(post.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        <div class="post-title">${post.title}</div>
+                        <img src="${post.photoUrl}" alt="${post.title}">
+                        <audio controls src="${post.audioUrl}"></audio>
+                    `;
+                    postsContainer.appendChild(postElement);
+                });
+            });
+        }
     </script>
 </body>
 </html>
