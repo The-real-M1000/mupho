@@ -1,4 +1,4 @@
- /* Variables root */
+/* Variables root */
 :root {
     --primary-color: #005C53;
     --background-dark: #032221;
@@ -288,6 +288,10 @@ body {
 @media (max-width: 768px) {
     .app-container {
         grid-template-columns: 1fr;
+    }
+
+    .mobile-menu-button {
+        display: block;
     }
 
     .sidebar {
