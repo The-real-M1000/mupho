@@ -39,8 +39,6 @@ body {
     height: 100vh;
     padding: 1rem;
     border-right: 1px solid var(--border-color);
-    background-color: var(--background-dark);
-    z-index: 100;
 }
 
 .logo {
@@ -79,89 +77,119 @@ body {
     font-size: 1.25rem;
 }
 
-/* Main Content */
-.main-content {
-    margin-left: var(--sidebar-width);
-    border-right: 1px solid var(--border-color);
-    min-height: 100vh;
+.post-button {
+    width: 90%;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 9999px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
-/* Posts Styles */
+.post-button:hover {
+    background-color: var(--hover-color);
+}
+
+/* Main Content */
+.main-content {
+    border-right: 1px solid var(--border-color);
+    min-height: 100vh;
+    margin-left: var(--sidebar-width);
+}
+
+.content-header {
+    position: sticky;
+    top: 0;
+    background-color: var(--background-dark);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem;
+    z-index: 10;
+}
+
+.tabs {
+    display: flex;
+    gap: 1rem;
+}
+
+.tab {
+    background: none;
+    border: none;
+    color: var(--secondary-text);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.tab.active {
+    color: var(--text-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* Posts Container */
 .posts-container {
     padding: 1rem;
 }
 
-.post {
-    background-color: var(--background-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 1rem;
-    margin-bottom: 1rem;
+/* Trending Section */
+.trending {
+    position: fixed;
+    right: 0;
+    width: var(--trending-width);
+    height: 100vh;
     padding: 1rem;
 }
 
-.post-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.search-container {
+    position: relative;
     margin-bottom: 1rem;
 }
 
-.post-header img {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.post-title {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-}
-
-.post img {
+.search-container input {
     width: 100%;
-    max-width: 600px;
-    max-height: 500px;
-    object-fit: cover;
-    border-radius: 1rem;
-    margin: 0 auto 1rem;
-    display: block;
-}
-
-.post audio {
-    width: 100%;
-    margin-top: 1rem;
-    border-radius: 0.5rem;
+    padding: 0.75rem 2.5rem;
     background-color: var(--hover-color);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    color: var(--text-color);
 }
 
-/* User Info */
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.search-container i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-text);
+}
+
+.trending-section {
+    background-color: var(--hover-color);
+    border-radius: 1rem;
     padding: 1rem;
+    margin-top: 1rem;
+}
+
+.trending-item {
+    padding: 1rem 0;
     border-bottom: 1px solid var(--border-color);
 }
 
-.user-info img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
+.trending-item:last-child {
+    border-bottom: none;
 }
 
-/* Upload Section */
-.upload-section {
-    padding: 1rem;
+.category {
+    color: var(--secondary-text);
+    font-size: 0.875rem;
 }
 
-.upload-progress {
-    background-color: var(--hover-color);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin: 1rem 0;
-    display: none;
+.posts-count {
+    display: block;
+    color: var(--secondary-text);
+    font-size: 0.875rem;
 }
 
 /* Modal Styles */
@@ -202,49 +230,30 @@ body {
     cursor: pointer;
 }
 
-.modal-body {
-    padding: 1rem;
-}
-
-/* Preview Container */
-#preview {
-    margin: 1rem 0;
-}
-
-#preview img {
-    max-width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    border-radius: 1rem;
-    margin: 0 auto;
-    display: block;
-}
-
-#preview audio {
-    width: 100%;
-    margin-top: 1rem;
-    border-radius: 0.5rem;
-}
-
-/* Buttons */
-.post-button, .publish-button, .login-button {
+.publish-button {
     background-color: var(--primary-color);
     color: var(--text-color);
     border: none;
+    padding: 0.5rem 1rem;
     border-radius: 9999px;
-    padding: 0.75rem 1.5rem;
     cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.2s;
-}
-
-.post-button:hover, .publish-button:hover, .login-button:hover {
-    background-color: var(--hover-color);
 }
 
 .publish-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+/* Image Handling */
+.preview-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    margin-top: 1rem;
 }
 
 /* Login Section */
@@ -265,7 +274,27 @@ body {
     width: 100%;
 }
 
-/* Mobile Menu Button */
+.logo-large {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.login-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+/* Mobile Menu Button (Hidden by default) */
 .mobile-menu-button {
     display: none;
     position: fixed;
@@ -275,18 +304,8 @@ body {
     border: none;
     color: var(--text-color);
     font-size: 1.5rem;
-    z-index: 1000;
+    z-index: 100;
     cursor: pointer;
-}
-
-/* Error Message */
-.error {
-    background-color: #ff4444;
-    color: white;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin: 1rem 0;
-    display: none;
 }
 
 /* Responsive Design */
@@ -318,6 +337,8 @@ body {
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        z-index: 90;
+        background-color: var(--background-dark);
     }
 
     .sidebar.active {
@@ -330,15 +351,27 @@ body {
 
     .modal-content {
         margin: 1rem;
-        width: calc(100% - 2rem);
-    }
-
-    .post img {
-        max-height: 300px;
+        max-width: calc(100% - 2rem);
     }
 }
 
-/* Dark Mode Enhancement */
+/* Dark Mode Specific */
 .dark {
     color-scheme: dark;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease;
 }
