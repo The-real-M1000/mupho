@@ -43,7 +43,54 @@ body {
     z-index: 100;
 }
 
+.logo {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 2rem;
+    padding: 0.5rem;
+}
+
+.main-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+}
+
+.nav-item:hover {
+    background-color: var(--hover-color);
+}
+
+.nav-item.active {
+    font-weight: bold;
+}
+
+.nav-item i {
+    font-size: 1.25rem;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: var(--sidebar-width);
+    border-right: 1px solid var(--border-color);
+    min-height: 100vh;
+}
+
 /* Posts Styles */
+.posts-container {
+    padding: 1rem;
+}
+
 .post {
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
@@ -66,11 +113,6 @@ body {
     object-fit: cover;
 }
 
-.post-date {
-    color: var(--secondary-text);
-    font-size: 0.875rem;
-}
-
 .post-title {
     font-size: 1.1rem;
     margin-bottom: 1rem;
@@ -78,18 +120,22 @@ body {
 
 .post img {
     width: 100%;
+    max-width: 600px;
     max-height: 500px;
     object-fit: cover;
     border-radius: 1rem;
-    margin-bottom: 1rem;
+    margin: 0 auto 1rem;
+    display: block;
 }
 
 .post audio {
     width: 100%;
     margin-top: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--hover-color);
 }
 
-/* User Info Styles */
+/* User Info */
 .user-info {
     display: flex;
     align-items: center;
@@ -105,7 +151,11 @@ body {
     object-fit: cover;
 }
 
-/* Upload Progress */
+/* Upload Section */
+.upload-section {
+    padding: 1rem;
+}
+
 .upload-progress {
     background-color: var(--hover-color);
     padding: 1rem;
@@ -114,14 +164,46 @@ body {
     display: none;
 }
 
-/* Error Message */
-.error {
-    background-color: #ff4444;
-    color: white;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin: 1rem 0;
+/* Modal Styles */
+.modal {
     display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--modal-background);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 2rem auto;
+    background-color: var(--background-dark);
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 1rem;
 }
 
 /* Preview Container */
@@ -134,40 +216,53 @@ body {
     max-height: 400px;
     object-fit: cover;
     border-radius: 1rem;
+    margin: 0 auto;
+    display: block;
 }
 
 #preview audio {
     width: 100%;
     margin-top: 1rem;
+    border-radius: 0.5rem;
 }
 
-/* Audio Player Customization */
-audio {
-    border-radius: 1rem;
-    background-color: var(--hover-color);
-}
-
-/* Upload Buttons */
-.upload-buttons {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.upload-button {
-    padding: 0.75rem 1.5rem;
-    background-color: var(--hover-color);
-    border: 1px solid var(--border-color);
-    border-radius: 9999px;
-    color: var(--text-color);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.upload-button:hover {
+/* Buttons */
+.post-button, .publish-button, .login-button {
     background-color: var(--primary-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 9999px;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.post-button:hover, .publish-button:hover, .login-button:hover {
+    background-color: var(--hover-color);
+}
+
+.publish-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Login Section */
+.login-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.login-card {
+    background-color: var(--background-dark);
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
 }
 
 /* Mobile Menu Button */
@@ -182,6 +277,16 @@ audio {
     font-size: 1.5rem;
     z-index: 1000;
     cursor: pointer;
+}
+
+/* Error Message */
+.error {
+    background-color: #ff4444;
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    display: none;
 }
 
 /* Responsive Design */
@@ -223,33 +328,17 @@ audio {
         margin-left: 0;
     }
 
+    .modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+    }
+
     .post img {
         max-height: 300px;
     }
-
-    .modal-content {
-        width: 95%;
-        margin: 1rem auto;
-    }
 }
 
-/* Loading Animation */
-.loading {
-    position: relative;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+/* Dark Mode Enhancement */
+.dark {
+    color-scheme: dark;
 }
