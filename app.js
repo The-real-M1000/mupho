@@ -221,6 +221,7 @@ function loadPosts() {
 
 // Funcionalidad del menú móvil
 document.addEventListener('DOMContentLoaded', () => {
+    // Crear botón del menú móvil
     const mobileButton = document.createElement('button');
     mobileButton.className = 'mobile-menu-button';
     mobileButton.innerHTML = '<i class="fas fa-bars"></i>';
