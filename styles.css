@@ -24,6 +24,7 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -45,69 +46,24 @@ body {
     border: 1px solid var(--border-color);
 }
 
-.upload-options {
+.modal-header {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-input[type="text"] {
-    width: 100%;
-    padding: 8px;
-    margin: 10px 0;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--hover-color);
-    color: var(--text-color);
-}
-
-#loginSection, #uploadSection {
-    text-align: center;
-    margin: 20px 0;
-}
-
-button {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 10px;
-}
-
-button:hover {
-    opacity: 0.9;
-}
-
-button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-
-/* Estilos específicos para posts e imágenes */
-.post {
-    border: 1px solid var(--border-color);
-    margin: 20px 0;
-    padding: 20px;
-    border-radius: 8px;
-    background-color: var(--background-dark);
-}
-
-.post-header {
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
-.post-header img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
+.close-modal {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
 }
 
+/* Upload Options */
 .upload-options {
     display: flex;
     flex-direction: column;
@@ -143,28 +99,93 @@ button:disabled {
     margin-right: 5px;
 }
 
-/* Mantener responsive pero sin apilar los botones */
-@media (max-width: 768px) {
-    .upload-buttons {
-        gap: 8px;
-    }
-    
-    .upload-button {
-        padding: 8px;
-    }
+/* Input Styles */
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--hover-color);
+    color: var(--text-color);
 }
 
-@media (max-width: 480px) {
-    .upload-buttons {
-        gap: 6px;
-    }
-    
-    .upload-button {
-        font-size: 0.9em;
-    }
+/* Login and Upload Sections */
+#loginSection, #uploadSection {
+    text-align: center;
+    margin: 20px 0;
 }
 
-/* Ajustes para imágenes de Cloudinary */
+.login-card {
+    background-color: var(--background-dark);
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.logo-large {
+    font-size: 48px;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+/* Button Styles */
+button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Post Styles */
+.post {
+    border: 1px solid var(--border-color);
+    margin: 20px 0;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: var(--background-dark);
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.post-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.post-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.post-date {
+    color: var(--secondary-text);
+    font-size: 0.9em;
+}
+
+/* Media Content Styles */
 .post img:not(.post-header img) {
     width: 100%;
     max-height: 400px;
@@ -179,7 +200,7 @@ button:disabled {
     border-radius: 4px;
 }
 
-/* Preview en el modal */
+/* Preview Styles */
 #preview {
     margin: 10px 0;
 }
@@ -196,6 +217,7 @@ button:disabled {
     margin: 10px 0;
 }
 
+/* Upload Progress */
 .upload-progress {
     margin: 10px 0;
     padding: 10px;
@@ -204,7 +226,31 @@ button:disabled {
     text-align: center;
 }
 
-/* Responsive */
+/* Error Message */
+.error {
+    color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* User Info */
+#userInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 10px;
+}
+
+#userInfo img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
     body {
         padding: 10px;
@@ -222,6 +268,14 @@ button:disabled {
         width: 95%;
         margin: 10px;
     }
+
+    .upload-buttons {
+        gap: 8px;
+    }
+    
+    .upload-button {
+        padding: 8px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -237,6 +291,16 @@ button:disabled {
     .post img:not(.post-header img) {
         max-height: 250px;
     }
-}
-  }
+
+    .upload-buttons {
+        gap: 6px;
+    }
+    
+    .upload-button {
+        font-size: 0.9em;
+    }
+
+    .login-card {
+        padding: 20px;
+    }
 }
