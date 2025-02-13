@@ -1,4 +1,5 @@
 {
+  "id": "mupho.vercel.app",
   "name": "Mupho",
   "short_name": "Mupho",
   "description": "Mupho, la app que combina Spotify y Pinterest.",
@@ -9,6 +10,10 @@
   "theme_color": "#005C53",
   "orientation": "portrait",
   "lang": "es",
+  "display_override": ["window-controls-overlay"],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "icons": [
     {
       "src": "/icon.png",
@@ -18,6 +23,18 @@
     {
       "src": "/icon.png",
       "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshot2.png",
+      "sizes": "1080x1920",
       "type": "image/png"
     }
   ]
