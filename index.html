@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,6 +38,10 @@
                 <a href="#" class="nav-item">
                     <i class="fas fa-user"></i>
                     <span>Perfil</span>
+                </a>
+                <a href="#" class="nav-item" id="settingsLink">
+                    <i class="fas fa-cog"></i>
+                    <span>Ajustes</span>
                 </a>
             </nav>
             <div class="sidebar-actions">
@@ -130,6 +134,42 @@
                             <i class="fas fa-music"></i>
                             <span>Audio</span>
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close-modal" id="closeSettings">&times;</button>
+                <h2>Ajustes</h2>
+            </div>
+            <div class="modal-body">
+                <h3>Tema</h3>
+                <div class="theme-options">
+                    <div class="theme-option" data-theme="neowave">
+                        <div class="color-preview primary"></div>
+                        <div class="theme-info">
+                            <h4>Neo-wave</h4>
+                            <p>Estilo moderno con tonos azules vibrantes</p>
+                        </div>
+                    </div>
+                    <div class="theme-option" data-theme="ecotech">
+                        <div class="color-preview primary"></div>
+                        <div class="theme-info">
+                            <h4>Ecotech</h4>
+                            <p>Tema verde inspirado en la naturaleza</p>
+                        </div>
+                    </div>
+                    <div class="theme-option" data-theme="minimal">
+                        <div class="color-preview primary"></div>
+                        <div class="theme-info">
+                            <h4>Minimal</h4>
+                            <p>Diseño minimalista en tonos grises</p>
+                        </div>
                     </div>
                 </div>
             </div>

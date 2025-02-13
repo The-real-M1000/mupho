@@ -342,30 +342,109 @@ function loadComments(postId) {
         });
     });
 }
+// Theme Switching Functionality
+const settingsModal = document.getElementById('settingsModal');
+const settingsLink = document.getElementById('settingsLink');
+const closeSettings = document.getElementById('closeSettings');
+const themeOptions = document.querySelectorAll('.theme-option');
 
-// Funcionalidad del menú móvil
+// Crear botón de aplicar tema
+const applyThemeButton = document.createElement('button');
+applyThemeButton.className = 'apply-theme-button';
+applyThemeButton.textContent = 'Aplicar tema';
+applyThemeButton.style.display = 'none';
+
+// Añadir el botón al header del modal
+document.querySelector('#settingsModal .modal-header').appendChild(applyThemeButton);
+
+let selectedTheme = null;
+
+// Show settings modal
+settingsLink.addEventListener('click', () => {
+    settingsModal.style.display = 'flex';
+    // Mostrar tema activo
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    themeOptions.forEach(option => {
+        option.classList.toggle('active', option.dataset.theme === currentTheme);
+    });
+});
+
+// Close settings modal
+closeSettings.addEventListener('click', () => {
+    settingsModal.style.display = 'none';
+    resetThemeSelection();
+});
+
+// Close modal when clicking outside
+settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+        settingsModal.style.display = 'none';
+        resetThemeSelection();
+    }
+});
+
+// Theme option click handlers
+themeOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        themeOptions.forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        selectedTheme = option.dataset.theme;
+        applyThemeButton.style.display = 'block';
+        
+        // Preview del tema
+        previewTheme(selectedTheme);
+    });
+});
+
+// Aplicar tema
+applyThemeButton.addEventListener('click', () => {
+    if (selectedTheme) {
+        setTheme(selectedTheme);
+        applyThemeButton.style.display = 'none';
+        settingsModal.style.display = 'none';
+        selectedTheme = null;
+    }
+});
+
+function setTheme(themeName) {
+    // Eliminar tema actual
+    document.documentElement.removeAttribute('data-theme');
+    
+    // Aplicar nuevo tema
+    if (themeName) {
+        document.documentElement.setAttribute('data-theme', themeName);
+        localStorage.setItem('selectedTheme', themeName);
+    }
+}
+
+function previewTheme(themeName) {
+    // Preview temporal del tema
+    document.documentElement.setAttribute('data-theme', themeName);
+}
+
+function resetThemeSelection() {
+    // Restaurar tema guardado
+    const savedTheme = localStorage.getItem('selectedTheme');
+    if (savedTheme) {
+        setTheme(savedTheme);
+        themeOptions.forEach(option => {
+            option.classList.toggle('active', option.dataset.theme === savedTheme);
+        });
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+    applyThemeButton.style.display = 'none';
+    selectedTheme = null;
+}
+
+// Cargar tema guardado al iniciar
 document.addEventListener('DOMContentLoaded', () => {
-    const mobileButton = document.createElement('button');
-    mobileButton.className = 'mobile-menu-button';
-    mobileButton.innerHTML = '<i class="fas fa-bars"></i>';
-    document.body.appendChild(mobileButton);
-
-    const sidebar = document.querySelector('.sidebar');
-
-    mobileButton.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.sidebar') && 
-            !e.target.closest('.mobile-menu-button')) {
-            sidebar.classList.remove('active');
+    const savedTheme = localStorage.getItem('selectedTheme');
+    if (savedTheme) {
+        setTheme(savedTheme);
+        const savedOption = document.querySelector(`[data-theme="${savedTheme}"]`);
+        if (savedOption) {
+            savedOption.classList.add('active');
         }
-    });
-
-    // Añadir lazy loading a las imágenes
-    const images = document.querySelectorAll('img:not([loading])');
-    images.forEach(img => {
-        img.setAttribute('loading', 'lazy');
-    });
+    }
 });
