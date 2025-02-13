@@ -11,7 +11,16 @@
     --trending-width: 350px;
 }
 
-/* Definición específica de temas */
+/* Prevenir scroll horizontal en móviles */
+html, body {
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
+}
+
+/* El resto del CSS permanece igual como en el archivo original... */
 [data-theme="neowave"] {
     --primary-color: #0061A8;
     --background-dark: #0A0F1E;
@@ -41,21 +50,6 @@
     --hover-color: #4A4D5B;
     --modal-background: rgba(43, 44, 52, 0.92);
 }
-/* Estilos para el botón de aplicar tema */
-.apply-theme-button {
-    background-color: var(--primary-color);
-    color: var(--text-color);
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s;
-}
-
-.apply-theme-button:hover {
-    background-color: var(--hover-color);
-}
 
 /* Reset y estilos globales */
 * {
@@ -78,6 +72,7 @@ body {
     min-height: 100vh;
     width: 100%;
     gap: 1rem;
+    overflow-x: hidden; /* Prevenir scroll horizontal */
 }
 
 /* Sidebar */
