@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.mupho.twa",
+        "sha256_cert_fingerprints": ["E7:3F:4F:92:2E:96:E2:A0:38:3E:52:D4:D8:05:62:6F:1B:51:41:C6:CF:B3:EF:08:AA:97:FE:43:DE:1C:DC:8F"]
+      }
+    }]
