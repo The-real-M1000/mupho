@@ -1,0 +1,13 @@
+{
+  "name": "MuPho",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "short_name": "mupho",
+  "id": "mupho",
+  "description": "MuPho, la appp que combina Spotify, X y Pinterest",
+  "categories": [
+    "entertainment",
+    "news",
+    "photo"
+  ]
+}
