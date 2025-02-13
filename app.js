@@ -31,6 +31,39 @@ const closeModal = document.querySelector('.close-modal');
 const publishButton = document.getElementById('publishPost');
 const uploadProgress = document.querySelector('.upload-progress');
 const postTemplate = document.getElementById('postTemplate');
+const mobileMenuButton = document.querySelector('.mobile-menu-button');
+const sidebar = document.querySelector('.sidebar');
+
+// Event Listeners para el menú móvil
+mobileMenuButton.addEventListener('click', () => {
+    sidebar.classList.toggle('active');
+});
+
+// Cerrar sidebar cuando se hace clic fuera
+document.addEventListener('click', (e) => {
+    if (sidebar.classList.contains('active') && 
+        !sidebar.contains(e.target) && 
+        !mobileMenuButton.contains(e.target)) {
+        sidebar.classList.remove('active');
+    }
+});
+
+// Cerrar sidebar cuando la ventana se redimensiona
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+    }
+});
+
+// Cerrar sidebar cuando se hace clic en un elemento de navegación
+const navItems = document.querySelectorAll('.nav-item');
+navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('active');
+        }
+    });
+});
 
 // Event Listeners para el modal
 createPostButton.addEventListener('click', () => {
@@ -342,6 +375,7 @@ function loadComments(postId) {
         });
     });
 }
+
 // Theme Switching Functionality
 const settingsModal = document.getElementById('settingsModal');
 const settingsLink = document.getElementById('settingsLink');
